@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ColorSensor;
@@ -115,6 +116,7 @@ public class TeleOpNou2 extends LinearOpMode {
         tun2= hardwareMap.get(DcMotor.class,"tun2");
         tun1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         tun2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        tun2.setDirection(DcMotor.Direction.REVERSE);
 
         intake_up = hardwareMap.get(DcMotor.class,"intake_up");///intake
         intake_down = hardwareMap.get(DcMotor.class,"intake_down");
@@ -283,16 +285,15 @@ public class TeleOpNou2 extends LinearOpMode {
 
         }
 
-        //intake(0.6);
-        //motif();///returneaza codul motifului, sau -1 daca nu gaseste(doar motif, nu orice apriltag)
         if(motif_code==-1)
             motif_code=motif();
-        tun();
+        tun(.7);
+        intake(.7);
 
 
     }
     boolean lastSquare = false;
-    void tun(){
+    void tun(double vit){
         boolean currentSquare = gamepad2.square;
         if (currentSquare && !lastSquare) {
             toggle_tun = !toggle_tun;
@@ -300,8 +301,8 @@ public class TeleOpNou2 extends LinearOpMode {
 
         lastSquare = currentSquare;
         if(toggle_tun){
-            tun1.setPower(0.7);
-            tun2.setPower(0.7);
+            tun1.setPower(vit);
+            tun2.setPower(vit);
         }
         else{
             tun1.setPower(0);
@@ -330,50 +331,34 @@ public class TeleOpNou2 extends LinearOpMode {
             }
         }
     }
-    int april_cod=-1;///cod
-    public int motif(){
-
-        LLResult result = limelight.getLatestResult();///rezultatele in variabila asta(de toate tipurile)
-
-        if (result != null && result.isValid()) {///verificam daca avem rezultate
-            List<LLResultTypes.FiducialResult> fiducialResults = result.getFiducialResults();///lista in care avem toate april tagurile gasite intr un moment dat
-            if (!fiducialResults.isEmpty()) {
-
-
-                // Iterate over every fiducial (AprilTag) detected in the list
-                for (LLResultTypes.FiducialResult fiducialResult : fiducialResults) {
-                    april_cod = fiducialResult.getFiducialId();
-
-                    // Note: The getTx(), getTy(), and getTa() methods typically
-                    // apply to the "primary" or "best-fit" target for the frame,
-                    // not necessarily the specific fiducialResult in the loop.
-                    // It's often safer to use the positional data from the fiducialResult
-                    // itself if it provides it (e.g., getX() or getY(), depending on the API).
-
-                    // For simplicity, we'll keep using the frame's primary data as you had it,
-                    // but use the fiducial ID from the specific result.
-                    //double tx = result.getTx();
-                    //double ty = result.getTy();
-                    //double ta = result.getTa();
-
-                    //telemetry.addData("Target Found! ID", april_cod);
-                    //telemetry.addData("Target X", tx);
-                    //telemetry.addData("Target Y", ty);
-                    //telemetry.addData("Target Area", ta);
-
-                    if(april_cod==23|| april_cod==22|| april_cod==21) break;///daca am gasit ce cautam, ies afra din loop
-                }
-            } else {
-                telemetry.addData("Limelight", "No AprilTags Detected");
-            }
-        } else {
-            telemetry.addData("Limelight", "No Valid Result/Targets");
+    public int motif() {
+        if (motif_code == 21 || motif_code == 22 || motif_code == 23) {
+            return motif_code;
         }
-        if(april_cod==23|| april_cod==22|| april_cod==21)
-            return april_cod;
-        else return -1;
 
+        LLResult result = limelight.getLatestResult();
+
+        if (result == null || !result.isValid()) {
+            return -1;
+        }
+        List<FiducialResult> tags = result.getFiducialResults();
+        if (tags == null || tags.isEmpty()) {
+            return -1;
+        }
+        for (FiducialResult tag : tags) {
+            int id = tag.getFiducialId();
+
+            if (id == 21 || id == 22 || id == 23) {
+                motif_code = id;       // Salvăm motiv-ul definitiv
+                telemetry.addData("Motif Found", id);
+                telemetry.update();
+                return id;
+            }
+        }
+
+        return -1;
     }
+
 
 
 
