@@ -389,7 +389,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
 
-    public int green_ball_pos;///pozitia bilei verzi: 0 == prima bila care a venit, 1 == a doua, 2 == a treia
+    public int green_ball_pos=0;///pozitia bilei verzi: 0 == prima bila care a venit, 1 == a doua, 2 == a treia
 
     public int degrees_servo_hand1 = 0, degrees_servo_hand2 = 0; ///TODO: set to correct values
     public double max_degrees_servo = 180.0;
@@ -398,6 +398,9 @@ public class TeleOpNou2 extends LinearOpMode {
 
     public double open_gate_pos = 0; // set value
     public double closed_gate_pos = 0; // this one is probably good
+
+    public boolean counting=false;
+    public int bile=0;
 
     public void open_gate(){
         gate.setPosition(open_gate_pos);
@@ -411,33 +414,30 @@ public class TeleOpNou2 extends LinearOpMode {
             case 21:///G P P
                 switch (green_ball_pos){
                     case 0:{
-                        //nu facem nimic
-                        open_gate();
-                        //wait for 3 balls to go through
-                        //idk how the fuck to do that
-                        close_gate();
+                        if(getColor()==-1)counting =true;//cautam bila
+                        if(counting){
+                            int color = getColor();
+                            if(color!=-1) counting = false;//am gasit bila
+                            if(color==0){//daca e mov
+                                green_ball_pos++;
+                                hand1.setPosition(pos_servo_hand1);//ridic bila mov
+                            }
+                            if(color==1) open_gate();
+                        }
                     }
                     case 1:{
-                        //ducem o bila sus, lasam 2 bile sa treaca si lasam bila de sus sa treaca
-                        hand1.setPosition(pos_servo_hand1);
-                        open_gate();
-                        //wait for 2 balls to go through
-                        hand1.setPosition(0);
-                        //wait for 1 ball to go through
-                        close_gate();
+                        if(getColor()==-1)counting =true;//cautam bila
+                        if(counting){
+                            if(getColor()!=-1) counting = false;//am gasit bila
+                            if(getColor()==0){//e mov
+                                green_ball_pos++;
+                                hand2.setPosition(pos_servo_hand2);//ridic a doua bila mov
+                            }
+                            if(getColor()==1) open_gate();
+                        }
                     }
                     case 2:{
-                        //ducem 2 bile sus, lasam 1 sa treaca si lasam bilele de sus sa treaca
                         open_gate();
-                        hand1.setPosition(pos_servo_hand1);
-                        //wait for next ball
-                        hand2.setPosition(pos_servo_hand2);
-                        //wait for ball to go through
-                        hand2.setPosition(0);
-                        //wait for ball to go through
-                        hand1.setPosition(0);
-                        //wait for ball to go through
-                        close_gate();
                     }
                 }
             case 22:///P G P
