@@ -28,8 +28,10 @@ public class Constants {
                     .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD);
     public static OTOSConstants localizerConstants = new OTOSConstants()
             .hardwareMapName("otos")
-            .linearUnit(DistanceUnit.CM)
-            .angleUnit(AngleUnit.RADIANS);
+            .linearUnit(DistanceUnit.INCH)
+            .angleUnit(AngleUnit.RADIANS)
+            .linearScalar(0)/// TODO
+            .angularScalar(0);///TODO
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
 

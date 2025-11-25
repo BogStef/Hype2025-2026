@@ -409,7 +409,7 @@ public class TeleOpNou2 extends LinearOpMode {
     public void close_gate(){
         gate.setPosition(closed_gate_pos);
     }
-    public void sort() {
+    public void sort() {/// TODO
         switch (motif_code) {///pag 75 din biblie pentru info despre motif
             case 21:///G P P
                 switch (green_ball_pos){
@@ -438,6 +438,8 @@ public class TeleOpNou2 extends LinearOpMode {
                     }
                     case 2:{
                         open_gate();
+                        if(getColor()==-1){}
+
                     }
                 }
             case 22:///P G P
