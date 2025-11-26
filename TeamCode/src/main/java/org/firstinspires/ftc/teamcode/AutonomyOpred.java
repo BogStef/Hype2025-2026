@@ -36,14 +36,12 @@ public class AutonomyOpred extends OpMode {
 
     @Override
     public void loop() {
-        follower.update(); // Update Pedro Pathing
-        pathState = autonomousPathUpdate(); // Update autonomous state machine
-
-        // Log values to Panels and Driver Station
-        panelsTelemetry.debug("Path State", pathState);
+        follower.update();
+        pathState = autonomousPathUpdate();
+        panelsTelemetry.debug("pathstate", pathState);
         panelsTelemetry.debug("X", follower.getPose().getX());
         panelsTelemetry.debug("Y", follower.getPose().getY());
-        panelsTelemetry.debug("Heading", follower.getPose().getHeading());
+        panelsTelemetry.debug("heading", follower.getPose().getHeading());
         panelsTelemetry.update(telemetry);
     }
 
@@ -103,6 +101,7 @@ public class AutonomyOpred extends OpMode {
 
             case 1:
                 if (!follower.isBusy()) {
+                    /// arunca bilele
                     follower.followPath(paths.Path2);
                     pathState = 2;
                 }
@@ -110,6 +109,7 @@ public class AutonomyOpred extends OpMode {
 
             case 2:
                 if (!follower.isBusy()) {
+                    ///porneste intake
                     follower.followPath(paths.Path3);
                     pathState = 3;
                 }
@@ -117,7 +117,9 @@ public class AutonomyOpred extends OpMode {
 
             case 3:
                 if (!follower.isBusy()) {
+                    /// opreste intake
                     follower.followPath(paths.line4);
+                    /// arunca bilele
                     pathState = 4;
                 }
                 break;

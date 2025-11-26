@@ -15,7 +15,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(2);// TODO
+            .mass(6);
     public static MecanumConstants driveConstants = new MecanumConstants()
                     .maxPower(1)
                     .rightFrontMotorName("drft")
@@ -38,7 +38,8 @@ public class Constants {
     public static Follower createFollower(HardwareMap hardwareMap) {
         return new FollowerBuilder(followerConstants, hardwareMap)
                 .OTOSLocalizer(localizerConstants)
-                /* other build steps*/
+                .pathConstraints(pathConstraints)//bunu
+                .mecanumDrivetrain(driveConstants)//bunu
                 .build();
     }
 

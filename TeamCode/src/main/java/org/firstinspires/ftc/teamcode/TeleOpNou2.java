@@ -71,7 +71,7 @@ public class TeleOpNou2 extends LinearOpMode {
             return 1;
         }
         return -1;
-    }///TODO , 0=P, 1=G, -1=NO BALL
+    }///TODO - colorsensor test
 
 
 
