@@ -17,7 +17,7 @@ public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
             .mass(6);
     public static MecanumConstants driveConstants = new MecanumConstants()
-                    .maxPower(1)
+                    .maxPower(0.5) //TODO
                     .rightFrontMotorName("drft")
                     .rightRearMotorName("drspa")
                     .leftRearMotorName("stspa")
@@ -30,8 +30,8 @@ public class Constants {
             .hardwareMapName("otos")
             .linearUnit(DistanceUnit.INCH)
             .angleUnit(AngleUnit.RADIANS)
-            .linearScalar(0)/// TODO
-            .angularScalar(0);///TODO
+            .linearScalar(-0.985)/// LASA PE -0.985 (minimul pe care il aveam era 0.97 si max era sub 1
+            .angularScalar(1);///LASA PE 1
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
 
