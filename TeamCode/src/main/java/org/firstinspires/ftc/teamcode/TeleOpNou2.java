@@ -389,7 +389,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
 
-    public int green_ball_pos=0;///pozitia bilei verzi: 0 == prima bila care a venit, 1 == a doua, 2 == a treia
+    public int green_ball_pos = 0;///pozitia bilei verzi: 0 == prima bila care a venit, 1 == a doua, 2 == a treia
 
     public int degrees_servo_hand1 = 0, degrees_servo_hand2 = 0; ///TODO: set to correct values
     public double max_degrees_servo = 180.0;
@@ -401,10 +401,37 @@ public class TeleOpNou2 extends LinearOpMode {
 
     public boolean counting=false;
     public int bile=0;
+    public int time_for_ball_to_pass = 0; //pls set value, I'm waaaaay to lazy
 
-    public void open_gate(){
-        gate.setPosition(open_gate_pos);
+    public void ball_up(){
+        if(hand1.getPosition()==pos_servo_hand1)
+            if(hand2.getPosition()==pos_servo_hand2)
+                System.out.println("ERROR: both hands already up");
+            else
+                hand2.setPosition(pos_servo_hand2);
+        else
+            hand1.setPosition(pos_servo_hand1);
     }
+    public void ball_down(){
+        if(hand1.getPosition()==0)
+            if(hand2.getPosition()==0)
+                System.out.println("ERROR: both hands already down");
+            else
+                hand2.setPosition(pos_servo_hand2);
+        else
+            hand1.setPosition(pos_servo_hand1);
+}
+
+    public void toggle_gate(){
+        if(gate.getPosition()==open_gate_pos)
+            gate.setPosition(closed_gate_pos);
+        else
+            gate.setPosition(open_gate_pos);
+    }
+    public void bypass1(){
+        toggle_gate();
+        wait()
+}
 
     public void close_gate(){
         gate.setPosition(closed_gate_pos);
@@ -444,15 +471,12 @@ public class TeleOpNou2 extends LinearOpMode {
                 }
             case 22:///P G P
                 switch (green_ball_pos){
-                    case 0:{
-                        //ducem o bila sus, lasam o bila sa treaca, lasam o bila de sus sa treaca, lasam o bila sa treaca
+                    case 0:{//ducem o bila sus, lasam o bila sa treaca, lasam o bila de sus sa treaca, lasam o bila sa treaca
+
                     }
-                    case 1:{
-                        //nu facem nimic
+                    case 1:{//nu facem nimic
                     }
-                    case 2:{
-                        //ducem o bila sus, lasam 2 sa treaca, lasam bila de sus sa treaca
-                    }
+                    case 2:{//ducem o bila sus, lasam 2 sa treaca, lasam bila de sus sa treaca
                 }
             case 23:///P P G
                 switch (green_ball_pos){
