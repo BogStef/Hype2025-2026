@@ -430,13 +430,13 @@ public class TeleOpNou2 extends LinearOpMode {
     }
     public void bypass1(){
         toggle_gate();
-        wait()
+        //wait();
 }
 
     public void close_gate(){
         gate.setPosition(closed_gate_pos);
     }
-    public void sort() {/// TODO
+   /* public void sort() {/// TODO
         switch (motif_code) {///pag 75 din biblie pentru info despre motif
             case 21:///G P P
                 switch (green_ball_pos){
@@ -483,7 +483,7 @@ public class TeleOpNou2 extends LinearOpMode {
                     case 0:{
                         //ducem o bila sus, lasam 2 sa treaca, lasam bila te sus sa treaca
                     }
-                    case 1:{
+                    case 1:{adb.
                         //lasam o bila sa treaca, punem una sus, lasam una sa treaca, lasam una de sus sa treaca
                     }
                     case 2:{
@@ -491,7 +491,7 @@ public class TeleOpNou2 extends LinearOpMode {
                     }
                 }
         }
-    }
+    }*/
 
 }
 
