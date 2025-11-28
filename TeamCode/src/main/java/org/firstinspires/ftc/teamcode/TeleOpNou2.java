@@ -22,6 +22,7 @@ import com.qualcomm.hardware.limelightvision.LLResultTypes.FiducialResult;
 import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import java.util.List;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 @TeleOp(name="TeleOp - BUN")
@@ -33,11 +34,12 @@ public class TeleOpNou2 extends LinearOpMode {
     public IMU imu;
     public ColorSensor colorsensor;
     Limelight3A limelight;
+    ElapsedTime timer = new ElapsedTime();
 
     public boolean pass_intake;
     public boolean toggle_tun;
 
-
+    public Servo push_back_servo;
 
 
 
@@ -184,6 +186,10 @@ public class TeleOpNou2 extends LinearOpMode {
         double drftpwr;
         double drspapwr;
 
+        while(timer.seconds() == 1){
+            push_back_servo.setPosition(0);
+            gate.setPosition(closed_gate_pos);
+        }
         if(starerun) {
 
             /*nghi = unghi() + resunghi;
@@ -292,6 +298,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
     }
+
     boolean lastSquare = false;
     void tun(double vit){
         boolean currentSquare = gamepad2.square;
@@ -358,13 +365,6 @@ public class TeleOpNou2 extends LinearOpMode {
 
         return -1;
     }
-
-
-
-
-
-
-
     int caterun=0;
 
     public double unghi()
@@ -401,75 +401,109 @@ public class TeleOpNou2 extends LinearOpMode {
 
     public boolean counting=false;
     public int bile=0;
-
-    public void open_gate(){
-        gate.setPosition(open_gate_pos);
+    public int[] ball_order = {-1, -1};//-1 = gol, 0 = mov, 1 = verde
+    public int first_ball = ball_order[0];
+    public int second_ball = ball_order[1];
+    public double pos_servo_push_back = 45;//todo change value
+    public void push_back(){
+        push_back_servo.setPosition(pos_servo_push_back);
+        timer.reset();
     }
-
-    public void close_gate(){
-        gate.setPosition(closed_gate_pos);
+    public void open_gate(){ //lasa O SINGURA BILA sa treaca si inchide usa dupa
+        gate.setPosition(open_gate_pos);
+        timer.reset();
+        push_back_servo.setPosition(-pos_servo_push_back);
+    }
+    public void hand_up(){
+        if(hand1.getPosition()==pos_servo_hand1)
+            if(hand2.getPosition()==pos_servo_hand2)
+                System.out.println("ERROR: YOU FUCKING DUMBASS, BOTH HANDS ARE UP!!!!!!!");
+            else
+                hand2.setPosition(pos_servo_hand2);
+        else
+            hand1.setPosition(pos_servo_hand1);
+    }
+    public void hand_down(){
+        if(hand1.getPosition()==0)
+            if(hand2.getPosition()==0)
+                System.out.println("ERROR: YOU FUCKING DUMBASS, BOTH HANDS ARE DOWN!!!!!!!");
+            else
+                hand2.setPosition(0);
+        else
+            hand1.setPosition(0);
     }
     public void sort() {/// TODO
-        switch (motif_code) {///pag 75 din biblie pentru info despre motif
-            case 21:///G P P
-                switch (green_ball_pos){
-                    case 0:{
-                        if(getColor()==-1)counting =true;//cautam bila
-                        if(counting){
-                            int color = getColor();
-                            if(color!=-1) counting = false;//am gasit bila
-                            if(color==0){//daca e mov
-                                green_ball_pos++;
-                                hand1.setPosition(pos_servo_hand1);//ridic bila mov
-                            }
-                            if(color==1) open_gate();
-                        }
-                    }
-                    case 1:{
-                        if(getColor()==-1)counting =true;//cautam bila
-                        if(counting){
-                            if(getColor()!=-1) counting = false;//am gasit bila
-                            if(getColor()==0){//e mov
-                                green_ball_pos++;
-                                hand2.setPosition(pos_servo_hand2);//ridic a doua bila mov
-                            }
-                            if(getColor()==1) open_gate();
-                        }
-                    }
-                    case 2:{
-                        open_gate();
-                        if(getColor()==-1){}
 
-                    }
+
+        switch (motif_code) {
+            case 21: // G P P
+                switch(first_ball * 10 + second_ball){
+                    case 0 :
+                        hand_up();
+                        hand_up();
+                        open_gate();//lasa O SINGURA BILA sa treaca si inchide usa dupa
+                        hand_down();
+                        open_gate();
+                        hand_down();
+                        open_gate();
+                        break;
+                    case 1 :
+                        hand_up();
+                        open_gate();
+                        open_gate();
+                        hand_down();
+                        open_gate();
+                        break;
+                    case 10 :
+                        open_gate();
+                        open_gate();
+                        open_gate();
+                        break;
                 }
-            case 22:///P G P
-                switch (green_ball_pos){
-                    case 0:{
-                        //ducem o bila sus, lasam o bila sa treaca, lasam o bila de sus sa treaca, lasam o bila sa treaca
-                    }
-                    case 1:{
-                        //nu facem nimic
-                    }
-                    case 2:{
-                        //ducem o bila sus, lasam 2 sa treaca, lasam bila de sus sa treaca
-                    }
+            case 22:// P G P
+                switch(first_ball * 10 + second_ball){
+                    case 0 :
+                        hand_up();
+                        open_gate();
+                        open_gate();
+                        hand_down();
+                        open_gate();
+                        break;
+                    case 1 :
+                        open_gate();
+                        open_gate();
+                        open_gate();
+                        break;
+                    case 10 :
+                        hand_up();
+                        open_gate();
+                        hand_down();
+                        open_gate();
+                        open_gate();
+                        break;
                 }
-            case 23:///P P G
-                switch (green_ball_pos){
-                    case 0:{
-                        //ducem o bila sus, lasam 2 sa treaca, lasam bila te sus sa treaca
-                    }
-                    case 1:{
-                        //lasam o bila sa treaca, punem una sus, lasam una sa treaca, lasam una de sus sa treaca
-                    }
-                    case 2:{
-                        //nu facem nimic
-                    }
+            case 23:// P P G
+                switch(first_ball * 10 + second_ball){
+                    case 0 :
+                        open_gate();
+                        open_gate();
+                        open_gate();
+                        break;
+                    case 1 :
+                        open_gate();
+                        hand_up();
+                        open_gate();
+                        hand_down();
+                        open_gate();
+                        break;
+                    case 10 :
+                        hand_up();
+                        open_gate();
+                        open_gate();
+                        hand_down();
+                        open_gate();
+                        break;
                 }
         }
     }
-
 }
-
-
-
