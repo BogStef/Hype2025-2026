@@ -186,9 +186,9 @@ public class TeleOpNou2 extends LinearOpMode {
         double drftpwr;
         double drspapwr;
 
-        while(timer.seconds() == 1){
-            push_back_servo.setPosition(0);
-            gate.setPosition(closed_gate_pos);
+        if (timer.seconds() == 1){
+            push_back_servo.setPosition(0); //TODO change valeu to act as gate
+            gate.setPosition(closed_gate_pos); //not necesary
         }
         if(starerun) {
 
@@ -396,23 +396,19 @@ public class TeleOpNou2 extends LinearOpMode {
     public double pos_servo_hand1 = degrees_servo_hand1/max_degrees_servo;
     public double pos_servo_hand2 = degrees_servo_hand2/max_degrees_servo;
 
-    public double open_gate_pos = 0; // set value
-    public double closed_gate_pos = 0; // this one is probably good
+    public double open_gate_pos = 0; // set value //it isnt used anymore
+    public double closed_gate_pos = 0; // this one is probably good //it isnt used anymore
 
     public boolean counting=false;
     public int bile=0;
     public int[] ball_order = {-1, -1};//-1 = gol, 0 = mov, 1 = verde
     public int first_ball = ball_order[0];
     public int second_ball = ball_order[1];
-    public double pos_servo_push_back = 45;//todo change value
-    public void push_back(){
-        push_back_servo.setPosition(pos_servo_push_back);
-        timer.reset();
-    }
+    public double pos_servo_push_back = 0.25;//todo change value
     public void open_gate(){ //lasa O SINGURA BILA sa treaca si inchide usa dupa
-        gate.setPosition(open_gate_pos);
-        timer.reset();
+        gate.setPosition(open_gate_pos); //nu mai e necesar
         push_back_servo.setPosition(-pos_servo_push_back);
+        timer.reset();
     }
     public void hand_up(){
         if(hand1.getPosition()==pos_servo_hand1)
@@ -432,13 +428,13 @@ public class TeleOpNou2 extends LinearOpMode {
         else
             hand1.setPosition(0);
     }
-    public void sort() {/// TODO
+    /* public void sort() {/// TODO
 
 
-        switch (motif_code) {
+       switch (motif_code) {
             case 21: // G P P
-                switch(first_ball * 10 + second_ball){
-                    case 0 :
+                switch (first_ball * 10 + second_ball) {
+                    case 0:
                         hand_up();
                         hand_up();
                         open_gate();//lasa O SINGURA BILA sa treaca si inchide usa dupa
@@ -447,34 +443,34 @@ public class TeleOpNou2 extends LinearOpMode {
                         hand_down();
                         open_gate();
                         break;
-                    case 1 :
+                    case 1:
                         hand_up();
                         open_gate();
                         open_gate();
                         hand_down();
                         open_gate();
                         break;
-                    case 10 :
+                    case 10:
                         open_gate();
                         open_gate();
                         open_gate();
                         break;
                 }
             case 22:// P G P
-                switch(first_ball * 10 + second_ball){
-                    case 0 :
+                switch (first_ball * 10 + second_ball) {
+                    case 0:
                         hand_up();
                         open_gate();
                         open_gate();
                         hand_down();
                         open_gate();
                         break;
-                    case 1 :
+                    case 1:
                         open_gate();
                         open_gate();
                         open_gate();
                         break;
-                    case 10 :
+                    case 10:
                         hand_up();
                         open_gate();
                         hand_down();
@@ -483,20 +479,20 @@ public class TeleOpNou2 extends LinearOpMode {
                         break;
                 }
             case 23:// P P G
-                switch(first_ball * 10 + second_ball){
-                    case 0 :
+                switch (first_ball * 10 + second_ball) {
+                    case 0:
                         open_gate();
                         open_gate();
                         open_gate();
                         break;
-                    case 1 :
+                    case 1:
                         open_gate();
                         hand_up();
                         open_gate();
                         hand_down();
                         open_gate();
                         break;
-                    case 10 :
+                    case 10:
                         hand_up();
                         open_gate();
                         open_gate();
@@ -505,5 +501,98 @@ public class TeleOpNou2 extends LinearOpMode {
                         break;
                 }
         }
-    }
+
+        */
+
+
+        public double degrees_revolver_current_pos = 0;
+        public Servo hand_rev;
+        public void rev_right(){
+            degrees_revolver_current_pos += 2/3; // creste cu o treime de rotatie
+            if(degrees_revolver_current_pos >= 2) degrees_revolver_current_pos -= 2;
+            hand_rev.setPosition(degrees_revolver_current_pos);
+        }
+        public void rev_left(){
+            degrees_revolver_current_pos -= 2/3; // creste cu o treime de rotatie
+            if(degrees_revolver_current_pos <= 0) degrees_revolver_current_pos += 2;
+            hand_rev.setPosition(degrees_revolver_current_pos);
+        }
+
+        public void sort_revolver() {
+            switch (motif_code) {
+                case 21: // G P P
+                    switch (first_ball * 10 + second_ball) {
+                        case 0: // p p g
+                            rev_right();
+                            rev_right();
+                            open_gate();
+                            rev_left();
+                            open_gate();
+                            rev_left();
+                            open_gate();
+                            break;
+                        case 1: // P G P
+                           rev_right();
+                           open_gate();
+                           open_gate();
+                           rev_left();
+                           open_gate();
+                           break;
+                        case 10: // G P P
+                            open_gate();
+                            open_gate();
+                            open_gate();
+                            break;
+                    }
+                case 22:// P G P
+                    switch (first_ball * 10 + second_ball) {
+                        case 0: // P P G
+                            rev_right();
+                            open_gate();
+                            open_gate();
+                            rev_left();
+                            open_gate();
+                            break;
+                        case 1: // P G P
+                            open_gate();
+                            open_gate();
+                            open_gate();
+                            break;
+                        case 10: // G P P
+                            rev_right();
+                            rev_right();
+                            open_gate();
+                            rev_right();
+                            open_gate();
+                            rev_right();
+                            open_gate();
+                            break;
+                    }
+                case 23:// P P G
+                    switch (first_ball * 10 + second_ball) {
+                        case 0: // P P G
+                            open_gate();
+                            open_gate();
+                            open_gate();
+                            break;
+                        case 1: // P G P
+                            rev_right();
+                            rev_right();
+                            open_gate();
+                            rev_right();
+                            open_gate();
+                            rev_right();
+                            open_gate();
+                            break;
+                        case 10: // G P P
+                            rev_right();
+                            open_gate();
+                            open_gate();
+                            rev_left();
+                            open_gate();
+                            break;
+                    }
+            }
+        }
+
 }
