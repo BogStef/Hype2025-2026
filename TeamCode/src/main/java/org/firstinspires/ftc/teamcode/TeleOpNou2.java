@@ -404,7 +404,7 @@ public class TeleOpNou2 extends LinearOpMode {
     public int[] ball_order = {-1, -1};//-1 = gol, 0 = mov, 1 = verde
     public int first_ball = ball_order[0];
     public int second_ball = ball_order[1];
-    public double pos_servo_push_back = 0.25;//todo change value
+    public double pos_servo_push_back = 0;//todo change value
     public void open_gate(){ //lasa O SINGURA BILA sa treaca si inchide usa dupa
         gate.setPosition(open_gate_pos); //nu mai e necesar
         push_back_servo.setPosition(-pos_servo_push_back);
