@@ -535,7 +535,7 @@ public class TeleOpNou2 extends LinearOpMode {
                                     last_command_time=timer.seconds();
                                     break;
                                 case 1:
-                                    if(timer.seconds()-last_command_time>=needed_wait) {
+                                    if(timer.seconds()-last_command_time>=needed_wait) {//ignore the error... I'm sure it's FINE
                                         rev_right();
                                         revolver_state = 2;
                                         last_command_time = timer.seconds();
