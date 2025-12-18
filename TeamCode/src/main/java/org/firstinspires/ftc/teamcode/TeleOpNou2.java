@@ -507,29 +507,57 @@ public class TeleOpNou2 extends LinearOpMode {
 
         public double degrees_revolver_current_pos = 0;
         public Servo hand_rev;
+        public double rev_rotation = 2.0/3.0;
         public void rev_right(){
-            degrees_revolver_current_pos += 2/3; // creste cu o treime de rotatie
+            degrees_revolver_current_pos += rev_rotation; // creste cu o treime de rotatie
             if(degrees_revolver_current_pos >= 2) degrees_revolver_current_pos -= 2;
             hand_rev.setPosition(degrees_revolver_current_pos);
         }
         public void rev_left(){
-            degrees_revolver_current_pos -= 2/3; // creste cu o treime de rotatie
+            degrees_revolver_current_pos -= rev_rotation; // creste cu o treime de rotatie
+            /// 2/3 = 0... acolo is inturi
             if(degrees_revolver_current_pos <= 0) degrees_revolver_current_pos += 2;
             hand_rev.setPosition(degrees_revolver_current_pos);
         }
+        public int revolver_state = 0;
 
         public void sort_revolver() {
+            double last_command_time;
+            double needed_wait=0;//TODO pls change dis
             switch (motif_code) {
                 case 21: // G P P
                     switch (first_ball * 10 + second_ball) {
                         case 0: // p p g
-                            rev_right();
-                            rev_right();
-                            open_gate();
-                            rev_left();
-                            open_gate();
-                            rev_left();
-                            open_gate();
+                            switch (revolver_state) {
+                                case 0:
+                                    rev_right();
+                                    revolver_state = 1;
+                                    last_command_time=timer.seconds();
+                                    break;
+                                case 1:
+                                    if(timer.seconds()-last_command_time>=needed_wait) {
+                                        rev_right();
+                                        revolver_state = 2;
+                                        last_command_time = timer.seconds();
+                                        break;
+                                    }///TODO faceti asa la toate dragii mei boboci
+                                case 2:
+                                    open_gate();
+                                    revolver_state=3;
+                                    break;
+                                case 3:
+                                    rev_left();
+                                    revolver_state=4;
+                                    break;
+                                case 4:
+                                    open_gate();
+                                    revolver_state=5;
+                                    break;
+
+                                        rev_left();
+
+                                        open_gate();
+                            }
                             break;
                         case 1: // P G P
                            rev_right();
