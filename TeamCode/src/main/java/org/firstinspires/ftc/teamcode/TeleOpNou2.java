@@ -414,36 +414,49 @@ public class TeleOpNou2 extends LinearOpMode {
         stspa.setVelocity(2897 * vmax * rot);
     }
     public void revRight(){
-        rev.setPosition(rev.getPosition()-Math.toRadians(120)/Math.PI);//nuj
-        int[] aux={-1};
-        aux[0]=neededOrder[0];
-        neededOrder[0]=neededOrder[1];
-        neededOrder[1]=neededOrder[2];
-        neededOrder[2]=aux[0];
+        rev.setPosition(rev.getPosition()-Math.toRadians(120)/Math.PI);
     }
     public void revLeft(){
-        rev.setPosition(rev.getPosition()+Math.toRadians(120)/Math.PI);//nuj
-        int[] aux={-1};
-        aux[0]=neededOrder[2];
-        neededOrder[2]=neededOrder[1];
-        neededOrder[1]=neededOrder[0];
-        neededOrder[0]=aux[0];
+        rev.setPosition(rev.getPosition()+Math.toRadians(120)/Math.PI);
     }
+    public int nrBall = 0;
+    public boolean firstBallGood = false;
+    public boolean secondBallGood = false;
+    public boolean thirdBallGood = false;
+    public boolean readyToShoot = false;
+    public int nrBallsShoot = 0;
     public void storage_sort(){
-
-
-
-        if(distanceCM<0){
-            if(getColor()==neededOrder[0]){
-                revRight();
-                neededOrder[0]=0;
-                neededOrder[1]=1;
-                neededOrder[2]=0;
-            }
-
+        switch(nrBall) {
+            case 0:
+                if (distanceCM < 0) {//TODO valori
+                    if (getColor() == neededOrder[nrBallsShoot]) {
+                        revRight();//punem in store
+                        nrBall++;
+                        firstBallGood = true;
+                    } else {
+                        revLeft();//punem in tun
+                        nrBall++;
+                    }
+                }
+                break;
+            case 1:
+                if (distanceCM < 0) {//TODO valori
+                    if (getColor() == neededOrder[nrBallsShoot]) {
+                        secondBallGood = true;
+                    }
+                    revRight();
+                    nrBall++;
+                }
+                break;
+            case 2:
+                if(distanceCM < 0){
+                    if(getColor() == neededOrder[nrBallsShoot]){
+                        thirdBallGood = true;
+                    }
+                }
+                break;
         }
-
-        }
+    }
 
 
     public void storage_basic(){
