@@ -49,12 +49,15 @@ public class TeleOpNou2 extends LinearOpMode {
     public DcMotor intake_down;
 
     public Servo push_tun;
+    public Servo rev;
 
 
 
 
     public final double vmax = 0.7;
     public int motif_code;
+
+    public int[] neededOrder = {};//0 - purple, 1 - green
 
     public int getColor() {
         double red, blue, green, alpha, error;
@@ -139,11 +142,14 @@ public class TeleOpNou2 extends LinearOpMode {
         rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
 
         push_tun = hardwareMap.get(Servo.class,"push_tun");
+        rev = hardwareMap.get(Servo.class,"rev");
 
         pass_intake = false;///pass intake
         toggle_tun = false;
         motif_code = -1;
         sort=false;//daca intram in modul de sortare(la finalul meciului)
+
+
 
 
     }
@@ -340,7 +346,7 @@ public class TeleOpNou2 extends LinearOpMode {
             }
         }
     }
-    public int id = 0;
+
     public int motif() {
         if (motif_code == 21 || motif_code == 22 || motif_code == 23) {
             return motif_code;
@@ -356,13 +362,32 @@ public class TeleOpNou2 extends LinearOpMode {
             return -1;
         }
         for (FiducialResult tag : tags) {
-            id = tag.getFiducialId();
+            int id = tag.getFiducialId();
 
             if (id == 21 || id == 22 || id == 23) {
                 motif_code = id;       // Salvăm motiv-ul definitiv
                 telemetry.addData("Motif Found", id);
                 telemetry.update();
+                switch(id){
+                    case 21:
+                        neededOrder[0] = 1;
+                        neededOrder[1] = 0;
+                        neededOrder[2] = 0;
+                        break;
+                    case 22:
+                        neededOrder[0] = 0;
+                        neededOrder[1] = 1;
+                        neededOrder[2] = 0;
+                        break;
+                    case 23:
+                        neededOrder[0] = 0;
+                        neededOrder[1] = 0;
+                        neededOrder[2] = 1;
+                        break;
+                }
                 return id;
+
+
             }
         }
 
@@ -389,28 +414,24 @@ public class TeleOpNou2 extends LinearOpMode {
         stspa.setVelocity(2897 * vmax * rot);
     }
     public void revRight(){
-
+        rev.setPosition(rev.getPosition()-Math.toRadians(120)/Math.PI);//nuj
+        int[] aux={-1};
+        aux[0]=neededOrder[0];
+        neededOrder[0]=neededOrder[1];
+        neededOrder[1]=neededOrder[2];
+        neededOrder[2]=aux[0];
     }
-    public void revLeft(){}
+    public void revLeft(){
+        rev.setPosition(rev.getPosition()+Math.toRadians(120)/Math.PI);//nuj
+        int[] aux={-1};
+        aux[0]=neededOrder[2];
+        neededOrder[2]=neededOrder[1];
+        neededOrder[1]=neededOrder[0];
+        neededOrder[0]=aux[0];
+    }
     public void storage_sort(){
-        int[] neededOrder = {};//0 - purple, 1 - green
-        switch(id){
-            case 21:
-                neededOrder[0] = 1;
-                neededOrder[1] = 0;
-                neededOrder[2] = 0;
-                break;
-            case 22:
-                neededOrder[0] = 0;
-                neededOrder[1] = 1;
-                neededOrder[2] = 0;
-                break;
-            case 23:
-                neededOrder[0] = 0;
-                neededOrder[1] = 0;
-                neededOrder[2] = 1;
-                break;
-        }
+
+
 
         if(distanceCM<0){
             if(getColor()==neededOrder[0]){
