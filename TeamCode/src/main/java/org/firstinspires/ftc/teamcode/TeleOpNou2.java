@@ -37,7 +37,7 @@ public class TeleOpNou2 extends LinearOpMode {
     public double distanceCM;
     public ColorSensor colorsensor;
     Limelight3A limelight;
-    ElapsedTime timer = new ElapsedTime();
+    ElapsedTime shootTimer = new ElapsedTime();
 
     public boolean pass_intake;
     public boolean toggle_tun;
@@ -168,7 +168,13 @@ public class TeleOpNou2 extends LinearOpMode {
     double f = 36;
 
     boolean sort;
-
+    boolean shooting = false;
+    public void updateShoot() {
+        if (shooting && shootTimer.milliseconds() > 300) {
+            push_tun.setPosition(0.0);
+            shooting = false;
+        }
+    }
     //PID
 
     public void run() {
@@ -302,8 +308,7 @@ public class TeleOpNou2 extends LinearOpMode {
         else{
             storage_basic();
         }
-
-
+        updateShoot();
     }
 
     boolean lastSquare = false;
@@ -419,49 +424,92 @@ public class TeleOpNou2 extends LinearOpMode {
     public void revLeft(){
         rev.setPosition(rev.getPosition()+Math.toRadians(120)/Math.PI);
     }
+    public void shoot() {
+        push_tun.setPosition(1.0);
+        shootTimer.reset();
+        shooting = true;
+    }
     public int nrBall = 0;
-    public boolean firstBallGood = false;
-    public boolean secondBallGood = false;
-    public boolean thirdBallGood = false;
-    public boolean readyToShoot = false;
-    public int nrBallsShoot = 0;
+    public int nrBallBasic = 0;
+    public boolean[] orderBall = {false , false , false};
     public void storage_sort(){
         switch(nrBall) {
             case 0:
                 if (distanceCM < 0) {//TODO valori
-                    if (getColor() == neededOrder[nrBallsShoot]) {
-                        revRight();//punem in store
+                    if (getColor() == neededOrder[0]){
+                        revRight();
+                        orderBall[0] = true;
                         nrBall++;
-                        firstBallGood = true;
-                    } else {
-                        revLeft();//punem in tun
+                    }
+                    else{
+                        revLeft();
                         nrBall++;
                     }
                 }
                 break;
             case 1:
                 if (distanceCM < 0) {//TODO valori
-                    if (getColor() == neededOrder[nrBallsShoot]) {
-                        secondBallGood = true;
+                    if (getColor() == neededOrder[1]) {
+                        orderBall[1] = true;
                     }
-                    revRight();
-                    nrBall++;
+                    if(orderBall[0]){
+                        revRight();
+                        nrBall++;
+                    }
+                    else{
+                        revLeft();
+                        nrBall++;
+                    }
                 }
                 break;
             case 2:
-                if(distanceCM < 0){
-                    if(getColor() == neededOrder[nrBallsShoot]){
-                        thirdBallGood = true;
+                if(distanceCM < 0){//TODO valori
+                    if(getColor() == neededOrder[2]){
+                        orderBall[2] = true;
+                    }
+                    if(orderBall[1] == false && orderBall[0] == false){
+                        revLeft();
                     }
                 }
                 break;
+        }
+        if(orderBall[1]){
+            shoot();
+            revRight();
+            shoot();
+            revRight();
+            shoot();
+        }
+        else{
+            shoot();
+            revLeft();
+            shoot();
+            revLeft();
+            shoot();
         }
     }
 
 
     public void storage_basic(){
-        if(distanceCM<0){//TODO
-
+        switch(nrBallBasic) {
+            case 0:
+                if (distanceCM < 0) {//TODO
+                    revLeft();
+                    //shoot
+                    nrBallBasic++;
+                }
+            case 1:
+                if (distanceCM < 0) {//TODO
+                    revLeft();
+                    //shoot
+                    nrBallBasic++;
+                }
+            case 2:
+                if (distanceCM < 0) {//TODO
+                    revLeft();
+                    //shoot
+                    nrBallBasic++;
+                }
         }
     }
 
