@@ -2,6 +2,17 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
+import com.pedropathing.geometry.BezierLine;
+import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.PathChain;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -15,6 +26,9 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -40,6 +54,7 @@ public class TeleOpNou2 extends LinearOpMode {
     ElapsedTime shootTimer = new ElapsedTime();
 
     public boolean pass_intake;
+    Follower follower;
     public boolean toggle_tun;
     public DistanceSensor rangeSensor;
 
@@ -148,6 +163,9 @@ public class TeleOpNou2 extends LinearOpMode {
         toggle_tun = false;
         motif_code = -1;
         sort=false;//daca intram in modul de sortare(la finalul meciului)
+
+        follower = Constants.createFollower(hardwareMap);
+        follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));///todo
 
 
 
@@ -511,6 +529,22 @@ public class TeleOpNou2 extends LinearOpMode {
                     nrBallBasic++;
                 }
         }
+    }
+    public void orientare(){
+        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        limelight.updateRobotOrientation(orientation.getYaw());
+        LLResult result=limelight.getLatestResult();
+        if(result!=null&& result.isValid()){
+            Pose3D botpose=result.getBotpose_MT2();
+            double tx = result.getTx();
+
+            while(tx!=0){///atentie la lag ul camerei
+
+            }
+
+
+        }
+
     }
 
 
