@@ -72,7 +72,7 @@ public class TeleOpNou2 extends LinearOpMode {
     public final double vmax = 0.7;
     public int motif_code;
 
-    public int[] neededOrder = {};//0 - purple, 1 - green
+    public int[] neededOrder = {0,0,0};//0 - purple, 1 - green
 
     public int getColor() {
         double red, blue, green, alpha, error;
@@ -154,7 +154,7 @@ public class TeleOpNou2 extends LinearOpMode {
         limelight.pipelineSwitch(0);
 
         colorsensor = hardwareMap.get(ColorSensor.class, "colorsensor");
-        rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
+
 
         push_tun = hardwareMap.get(Servo.class,"push_tun");
         rev = hardwareMap.get(Servo.class,"rev");
@@ -167,9 +167,7 @@ public class TeleOpNou2 extends LinearOpMode {
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));///todo
 
-
-
-
+        rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
     }
 
     boolean pressedl = false;
@@ -189,7 +187,7 @@ public class TeleOpNou2 extends LinearOpMode {
     boolean shooting = false;
     public void updateShoot() {
         if (shooting && shootTimer.milliseconds() > 300) {
-            push_tun.setPosition(0.0);
+            push_tun.setPosition(0.0);//TODO change value
             shooting = false;
         }
     }
@@ -314,9 +312,13 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
         }
+
         distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
-        if (motif_code == -1)
+        telemetry.addData("distance: ", distanceCM);
+
+        /*if (motif_code == -1)
             motif_code = motif();
+
         tun(.7);
         intake(.7);
         ///TODO if(gamepad2.right_trigger>0) sort=true;
@@ -326,7 +328,7 @@ public class TeleOpNou2 extends LinearOpMode {
         else{
             storage_basic();
         }
-        updateShoot();
+        updateShoot();*/
     }
 
     boolean lastSquare = false;
@@ -348,8 +350,6 @@ public class TeleOpNou2 extends LinearOpMode {
     }
 
     void intake(double vit) {
-        {
-        }
         if (gamepad2.triangle) {
             intake_up.setPower(vit);
             intake_down.setPower(vit);
@@ -365,7 +365,7 @@ public class TeleOpNou2 extends LinearOpMode {
             if (pass_intake) {
                 intake_down.setPower(vit);
             } else {
-                intake_down.setPower(-vit);
+                intake_down.setPower(-1*vit);
             }
         }
     }
@@ -391,7 +391,8 @@ public class TeleOpNou2 extends LinearOpMode {
                 motif_code = id;       // Salvăm motiv-ul definitiv
                 telemetry.addData("Motif Found", id);
                 telemetry.update();
-                switch(id){
+                neededOrder[id-21] = 1;
+                /*switch(id){
                     case 21:
                         neededOrder[0] = 1;
                         neededOrder[1] = 0;
@@ -407,7 +408,7 @@ public class TeleOpNou2 extends LinearOpMode {
                         neededOrder[1] = 0;
                         neededOrder[2] = 1;
                         break;
-                }
+                }*/
                 return id;
 
 
@@ -513,19 +514,19 @@ public class TeleOpNou2 extends LinearOpMode {
             case 0:
                 if (distanceCM < 0) {//TODO
                     revLeft();
-                    //shoot
+                    shoot();
                     nrBallBasic++;
                 }
             case 1:
                 if (distanceCM < 0) {//TODO
                     revLeft();
-                    //shoot
+                    shoot();
                     nrBallBasic++;
                 }
             case 2:
                 if (distanceCM < 0) {//TODO
                     revLeft();
-                    //shoot
+                    shoot();
                     nrBallBasic++;
                 }
         }
