@@ -71,6 +71,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
     public final double vmax = 0.7;
     public int motif_code;
+    public float distanta_proxsensorCM=20;
 
     public int[] neededOrder = {0,0,0};//0 - purple, 1 - green
 
@@ -313,22 +314,19 @@ public class TeleOpNou2 extends LinearOpMode {
 
         }
 
-        distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
-        telemetry.addData("distance: ", distanceCM);
+        distanceCM = rangeSensor.getDistance(DistanceUnit.CM);//update continuu la distanta
 
-        /*if (motif_code == -1)
-            motif_code = motif();
 
+        if (motif_code == -1)  motif_code = motif(); //cauta motif
+        telemetry.addData("Detected Motif:",motif_code);
         tun(.7);
         intake(.7);
-        ///TODO if(gamepad2.right_trigger>0) sort=true;
-        if(sort){
-            storage_sort();
-        }
-        else{
+        if(gamepad2.right_trigger>0.5){
             storage_basic();
         }
-        updateShoot();*/
+
+
+        updateShoot();
     }
 
     boolean lastSquare = false;
@@ -349,6 +347,7 @@ public class TeleOpNou2 extends LinearOpMode {
         }
     }
 
+    ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
     void intake(double vit) {
         if (gamepad2.triangle) {
             intake_up.setPower(vit);
@@ -420,8 +419,9 @@ public class TeleOpNou2 extends LinearOpMode {
 
     int caterun = 0;
 
+    ///nico stie
     public double unghi() {
-        imu = hardwareMap.get(IMU.class, "imu");
+
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.LEFT, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD)));
         double unghi = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         //telemetry.addData(" ", unghi);
@@ -451,16 +451,16 @@ public class TeleOpNou2 extends LinearOpMode {
     public int nrBall = 0;
     public int nrBallBasic = 0;
     public boolean[] orderBall = {false , false , false};
+    public boolean readytoshoot = false;
     public void storage_sort(){
         switch(nrBall) {
             case 0:
                 if (distanceCM < 0) {//TODO valori
-                    if (getColor() == neededOrder[0]){
+                    if (getColor() == neededOrder[0]) {
                         revRight();
                         orderBall[0] = true;
                         nrBall++;
-                    }
-                    else{
+                    } else {
                         revLeft();
                         nrBall++;
                     }
@@ -471,65 +471,66 @@ public class TeleOpNou2 extends LinearOpMode {
                     if (getColor() == neededOrder[1]) {
                         orderBall[1] = true;
                     }
-                    if(orderBall[0]){
+                    if (orderBall[0]) {
                         revRight();
                         nrBall++;
-                    }
-                    else{
+                    } else {
                         revLeft();
                         nrBall++;
                     }
                 }
                 break;
             case 2:
-                if(distanceCM < 0){//TODO valori
-                    if(getColor() == neededOrder[2]){
+                if (distanceCM < 0) {//TODO valori
+                    if (getColor() == neededOrder[2]) {
                         orderBall[2] = true;
                     }
-                    if(orderBall[1] == false && orderBall[0] == false){
+                    if (orderBall[1] == false && orderBall[0] == false) {
                         revLeft();
                     }
                 }
+                readytoshoot = true;
                 break;
         }
-        if(orderBall[1]){
-            shoot();
-            revRight();
-            shoot();
-            revRight();
-            shoot();
-        }
-        else{
-            shoot();
-            revLeft();
-            shoot();
-            revLeft();
-            shoot();
+        if(readytoshoot){
+            if(orderBall[1]){
+                shoot();
+                revRight();
+                shoot();
+                revRight();
+                shoot();
+            }
+            else{
+                shoot();
+                revLeft();
+                shoot();
+                revLeft();
+                shoot();
+            }
         }
     }
-
-
     public void storage_basic(){
         switch(nrBallBasic) {
             case 0:
-                if (distanceCM < 0) {//TODO
+                if (distanceCM < distanta_proxsensorCM) {
                     revLeft();
                     shoot();
                     nrBallBasic++;
                 }
             case 1:
-                if (distanceCM < 0) {//TODO
+                if (distanceCM < distanta_proxsensorCM) {
                     revLeft();
                     shoot();
                     nrBallBasic++;
                 }
             case 2:
-                if (distanceCM < 0) {//TODO
+                if (distanceCM < distanta_proxsensorCM) {
                     revLeft();
                     shoot();
                     nrBallBasic++;
                 }
         }
+        if(nrBallBasic>=3) nrBallBasic = 0;
     }
     public void orientare(){
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
@@ -538,10 +539,6 @@ public class TeleOpNou2 extends LinearOpMode {
         if(result!=null&& result.isValid()){
             Pose3D botpose=result.getBotpose_MT2();
             double tx = result.getTx();
-
-            while(tx!=0){///atentie la lag ul camerei
-
-            }
 
 
         }
