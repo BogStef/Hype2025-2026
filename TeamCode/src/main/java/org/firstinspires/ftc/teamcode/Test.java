@@ -45,36 +45,47 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @TeleOp(name="Test")
 public class Test extends LinearOpMode {
-    Servo push_tun;
-    Servo rev;
-    double pos=0.0;
-    private boolean last_state=false;
-    private boolean current_state;
-    private boolean last_statetr=false;
-    private boolean current_statetr;
-    @Override
 
+    public Servo rev;
+
+    double servoPos = 0.0;
+
+    final double TOTAL_DEG = 245.0;
+    final double STEP = 120.0 / TOTAL_DEG; // ≈ 0.4898
+
+    boolean lastTriangle = false;
+    boolean lastCircle = false;
+
+    @Override
     public void runOpMode() {
-        initialize();
-        telemetry.update();
+
+        rev = hardwareMap.get(Servo.class, "rev");
+        rev.setPosition(servoPos);
+
+
         waitForStart();
-            while (opModeIsActive()) {
-                run();
+
+        while (opModeIsActive()) {
+
+            boolean triangle = gamepad1.triangle;
+            boolean circle = gamepad1.circle;
+
+            // +120°
+            if (triangle && !lastTriangle) {
+                servoPos += STEP;
+                if (servoPos > 1.0) servoPos -= 1.0;
+                rev.setPosition(servoPos);
             }
 
+            // -120°
+            if (circle && !lastCircle) {
+                servoPos -= STEP;
+                if (servoPos < 0.0) servoPos += 1.0;
+                rev.setPosition(servoPos);
+            }
+
+            lastTriangle = triangle;
+            lastCircle = circle;
+        }
     }
-        public DistanceSensor rangeSensor;
-    public void initialize(){
-        push_tun = hardwareMap.get(Servo.class, "push_tun");
-
-
-    }
-    public void rev_left(){
-
-
-    }
-    public void run(){
-        telemetry.addData("righttrigger", gamepad2.right_trigger);
-    }
-
 }

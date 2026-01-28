@@ -321,11 +321,9 @@ public class TeleOpNou2 extends LinearOpMode {
         telemetry.addData("Detected Motif:",motif_code);
         tun(.7);
         intake(.7);
-        if(gamepad2.right_trigger>0.5){
+        if(gamepad2.right_trigger>0.2){
             storage_basic();
         }
-
-
         updateShoot();
     }
 
