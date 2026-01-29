@@ -51,7 +51,8 @@ public class Test extends LinearOpMode {
     double servoPos = 0.0;
 
     final double TOTAL_DEG = 245.0;
-    final double STEP = 120.0 / TOTAL_DEG; // ≈ 0.4898
+    final double STEP = 120.0 / TOTAL_DEG; // = 0.4898
+
 
     boolean lastTriangle = false;
     boolean lastCircle = false;
@@ -61,31 +62,18 @@ public class Test extends LinearOpMode {
 
         rev = hardwareMap.get(Servo.class, "rev");
         rev.setPosition(servoPos);
-
+        rev.scaleRange(0,1);
 
         waitForStart();
 
         while (opModeIsActive()) {
 
-            boolean triangle = gamepad1.triangle;
-            boolean circle = gamepad1.circle;
+            if(gamepad1.circle) rev.setPosition(0.0);
+            if(gamepad1.cross) rev.setPosition(0.25);
+            if(gamepad1.square) rev.setPosition(0.5);
+            if(gamepad1.triangle) rev.setPosition(0.75);;
+            if(gamepad1.right_trigger>0.5) rev.setPosition(1);
 
-            // +120°
-            if (triangle && !lastTriangle) {
-                servoPos += STEP;
-                if (servoPos > 1.0) servoPos -= 1.0;
-                rev.setPosition(servoPos);
-            }
-
-            // -120°
-            if (circle && !lastCircle) {
-                servoPos -= STEP;
-                if (servoPos < 0.0) servoPos += 1.0;
-                rev.setPosition(servoPos);
-            }
-
-            lastTriangle = triangle;
-            lastCircle = circle;
         }
     }
 }
