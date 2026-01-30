@@ -326,6 +326,7 @@ public class TeleOpNou2 extends LinearOpMode {
             while(functionshootstate<=1){
                 shoot();
             }
+            functionshootstate=0;
         }
         ///
 
@@ -337,6 +338,7 @@ public class TeleOpNou2 extends LinearOpMode {
         if(gamepad2.right_trigger>0.3){///SHOOT BASIC
             while(basicState<=4)
                 storage_basic();
+            basicState=0;
         }
 
 
@@ -576,7 +578,10 @@ public class TeleOpNou2 extends LinearOpMode {
             switch (shootState) {
 
                 case 0:
-                    shoot();
+                    while(functionshootstate<=1)
+                        shoot();
+                    functionshootstate=0;
+
                     shootTimer.reset();
                     shootState = 1;
                     break;
@@ -592,7 +597,9 @@ public class TeleOpNou2 extends LinearOpMode {
 
                 case 2:
                     if (shootTimer.milliseconds() > 300) {
-                        shoot();
+                        while(functionshootstate<=1)
+                            shoot();
+                        functionshootstate=0;
                         shootTimer.reset();
                         shootState = 3;
                     }
@@ -609,7 +616,9 @@ public class TeleOpNou2 extends LinearOpMode {
 
                 case 4:
                     if (shootTimer.milliseconds() > 300) {
-                        shoot();
+                        while(functionshootstate<=1)
+                            shoot();
+                        functionshootstate=0;
                         shootState = 0;
                         readytoshoot = false;
                     }
@@ -619,12 +628,15 @@ public class TeleOpNou2 extends LinearOpMode {
 
     }
     int basicState=0;
-    int shoot_time = 0;
+    int shoot_time = 20; //todo test value
     public void storage_basic(){
         if(distanceCM>=distanta_proxsensorCM) return;
         switch (basicState){
             case 0:
-                shoot();
+                while(functionshootstate<=1)
+                    shoot();
+                functionshootstate=0;
+
                 shootTimer.reset();
                 basicState++;
                 break;
@@ -637,7 +649,9 @@ public class TeleOpNou2 extends LinearOpMode {
                 break;
             case 2:
                 if(shootTimer.milliseconds() > shoot_time) {
-                    shoot();
+                    while(functionshootstate<=1)
+                        shoot();
+                    functionshootstate=0;
                     shootTimer.reset();
                     basicState++;
                 }
@@ -651,7 +665,9 @@ public class TeleOpNou2 extends LinearOpMode {
                 break;
             case 4:
                 if(shootTimer.milliseconds() > shoot_time) {
-                    shoot();
+                    while(functionshootstate<=1)
+                        shoot();
+                    functionshootstate=0;
                     shootTimer.reset();
                     basicState++;
                 }
