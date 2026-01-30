@@ -319,13 +319,29 @@ public class TeleOpNou2 extends LinearOpMode {
 
         if (motif_code == -1)  motif_code = motif(); //cauta motif
         else limelight.stop();
+        ///OVVERIDEURI
+        force_right();///PAD URI
+        force_left();
+        if(gamepad2.dpad_up){
+            while(functionshootstate<=1){
+                shoot();
+            }
+        }
+        ///
+
         telemetry.addData("Detected Motif:",motif_code);
+        telemetry.update();
         tun(.7);
         intake(.7);
-        if(gamepad2.right_trigger>0.3){
+
+        if(gamepad2.right_trigger>0.3){///SHOOT BASIC
             while(basicState<=4)
                 storage_basic();
         }
+
+
+
+
     }
 
     boolean lastSquare = false;
@@ -345,6 +361,25 @@ public class TeleOpNou2 extends LinearOpMode {
             tun2.setPower(0);
         }
     }
+    boolean lastLeftDpad = false;
+    void force_left() {
+        boolean currentLeftDpad=gamepad2.dpad_left;
+        if(currentLeftDpad && !lastLeftDpad){
+            revLeft();
+        }
+        lastLeftDpad = currentLeftDpad;
+    }
+    boolean lastRightDpad=false;
+    void force_right(){
+        boolean currentRightDpad=gamepad2.dpad_right;
+        if(currentRightDpad && !lastRightDpad){
+            revRight();
+        }
+        lastRightDpad = currentRightDpad;
+    }
+
+
+
 
     ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
     void intake(double vit) {
@@ -456,13 +491,24 @@ public class TeleOpNou2 extends LinearOpMode {
         else
             rev.setPosition(revpos1);
     }
+
+    public int functionshootstate=0;
+
     public void shoot() {///face pac pac si face shooting true
-        shootTimer.reset();
-        push_tun.setPosition(.4);///
-        if(shootTimer.milliseconds()>90){
-            push_tun.setPosition(0);
-            shooting = true;
+        switch(functionshootstate){
+            case 0:
+                shootTimer.reset();
+                push_tun.setPosition(.4);///
+                functionshootstate++;
+            case 1:
+                if(shootTimer.milliseconds()>90){
+                    push_tun.setPosition(0);
+                    functionshootstate++;
+                }
+
         }
+
+
     }
     public int nrBall = 0;
     public int nrBallBasic = 0;
