@@ -78,6 +78,8 @@ public class TeleOpNou2 extends LinearOpMode {
 
     public int[] neededOrder = {0,0,0};//0 - purple, 1 - green
 
+    int shootState=0;
+
     public int getColor() {
         double red, blue, green, alpha, error;
         error = 0;
@@ -189,12 +191,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
     boolean sort;
     boolean shooting = false;
-    public void updateShoot() {
-        if (shooting && shootTimer.milliseconds() > 300) {
-            push_tun.setPosition(0.0);//TODO change value
-            shooting = false;
-        }
-    }
+
     //PID
 
     public void run() {
@@ -325,7 +322,10 @@ public class TeleOpNou2 extends LinearOpMode {
         telemetry.addData("Detected Motif:",motif_code);
         tun(.7);
         intake(.7);
-        storage_basic();
+        if(gamepad2.right_trigger>0.3){
+            while(basicState<=4)
+                storage_basic();
+        }
     }
 
     boolean lastSquare = false;
@@ -456,15 +456,13 @@ public class TeleOpNou2 extends LinearOpMode {
         else
             rev.setPosition(revpos1);
     }
-    public void shoot() {
+    public void shoot() {///face pac pac si face shooting true
         shootTimer.reset();
         push_tun.setPosition(.4);///
-        if(shootTimer.milliseconds()>500){
+        if(shootTimer.milliseconds()>90){
             push_tun.setPosition(0);
             shooting = true;
         }
-
-
     }
     public int nrBall = 0;
     public int nrBallBasic = 0;
@@ -473,7 +471,7 @@ public class TeleOpNou2 extends LinearOpMode {
     public void storage_sort(){
         switch(nrBall) {
             case 0:
-                if (distanceCM < 0) {//TODO valori
+                if (distanceCM < distanta_proxsensorCM) {
                     if (getColor() == neededOrder[0]) {
                         revRight();
                         orderBall[0] = true;
@@ -485,7 +483,7 @@ public class TeleOpNou2 extends LinearOpMode {
                 }
                 break;
             case 1:
-                if (distanceCM < 0) {//TODO valori
+                if (distanceCM < distanta_proxsensorCM) {
                     if (getColor() == neededOrder[1]) {
                         orderBall[1] = true;
                     }
@@ -499,7 +497,7 @@ public class TeleOpNou2 extends LinearOpMode {
                 }
                 break;
             case 2:
-                if (distanceCM < 0) {//TODO valori
+                if (distanceCM < distanta_proxsensorCM) {
                     if (getColor() == neededOrder[2]) {
                         orderBall[2] = true;
                     }
@@ -510,8 +508,9 @@ public class TeleOpNou2 extends LinearOpMode {
                 readytoshoot = true;
                 break;
         }
-        if(readytoshoot){
+        /*if(readytoshoot){
             if(orderBall[1]){
+
                 shoot();
                 revRight();
                 shoot();
@@ -525,42 +524,101 @@ public class TeleOpNou2 extends LinearOpMode {
                 revLeft();
                 shoot();
             }
-        }
-    }
-    public void storage_basic(){
-        switch(nrBallBasic) {
-            case 0:
-                if (distanceCM < distanta_proxsensorCM) {
+        }*/
+        if (readytoshoot) {
+
+            switch (shootState) {
+
+                case 0:
+                    shoot();
                     shootTimer.reset();
-                    revLeft();
-                    if(shootTimer.milliseconds()>100) {
-                        shoot();
-                        nrBallBasic++;
+                    shootState = 1;
+                    break;
+
+                case 1:
+                    if (shootTimer.milliseconds() > 400) {
+                        if (orderBall[1]) revRight();
+                        else revLeft();
+                        shootTimer.reset();
+                        shootState = 2;
                     }
-                }
+                    break;
+
+                case 2:
+                    if (shootTimer.milliseconds() > 300) {
+                        shoot();
+                        shootTimer.reset();
+                        shootState = 3;
+                    }
+                    break;
+
+                case 3:
+                    if (shootTimer.milliseconds() > 400) {
+                        if (orderBall[1]) revRight();
+                        else revLeft();
+                        shootTimer.reset();
+                        shootState = 4;
+                    }
+                    break;
+
+                case 4:
+                    if (shootTimer.milliseconds() > 300) {
+                        shoot();
+                        shootState = 0;
+                        readytoshoot = false;
+                    }
+                    break;
+            }
+        }
+
+    }
+    int basicState=0;
+    int shoot_time = 0;
+    public void storage_basic(){
+        if(distanceCM>=distanta_proxsensorCM) return;
+        switch (basicState){
+            case 0:
+                shoot();
+                shootTimer.reset();
+                basicState++;
                 break;
             case 1:
-                if (distanceCM < distanta_proxsensorCM) {
+                if(shootTimer.milliseconds() > shoot_time) {
                     revLeft();
-                    if(shootTimer.milliseconds()>100){
-                        shoot();
-                        nrBallBasic++;
-                    }
-
+                    shootTimer.reset();
+                    basicState++;
                 }
                 break;
             case 2:
-                if (distanceCM < distanta_proxsensorCM) {
+                if(shootTimer.milliseconds() > shoot_time) {
+                    shoot();
+                    shootTimer.reset();
+                    basicState++;
+                }
+                break;
+            case 3:
+                if(shootTimer.milliseconds() > shoot_time) {
                     revLeft();
-                    if(shootTimer.milliseconds()>100){
-                        shoot();
-                        nrBallBasic++;
-                    }
-
+                    shootTimer.reset();
+                    basicState++;
+                }
+                break;
+            case 4:
+                if(shootTimer.milliseconds() > shoot_time) {
+                    shoot();
+                    shootTimer.reset();
+                    basicState++;
                 }
                 break;
         }
-        if(nrBallBasic>=3) nrBallBasic = 0;
+        /*
+        shoot
+        revleft
+        shoot
+        revleft
+        shoot
+         */
+
     }
     public void orientare(){
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();

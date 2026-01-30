@@ -32,7 +32,7 @@ public class Constants {
             .offset(new SparkFunOTOS.Pose2D(0,-0.0787401575,Math.PI/2))
             .linearUnit(DistanceUnit.INCH)
             .angleUnit(AngleUnit.RADIANS)
-            .linearScalar(-0.985)/// LASA PE -0.985 (minimul pe care il aveam era 0.97 si max era sub 1
+            .linearScalar(-0.985)/// LASA PE -0.985 (minimu,n  n                                       l pe care il aveam era 0.97 si max era sub 1
             .angularScalar(1);///LASA PE 1
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
