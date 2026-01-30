@@ -319,23 +319,24 @@ public class TeleOpNou2 extends LinearOpMode {
 
         if (motif_code == -1)  motif_code = motif(); //cauta motif
         else limelight.stop();
+
         ///OVVERIDEURI
         force_right();///PAD URI
         force_left();
-        if(gamepad2.dpad_up){
+        if(gamepad2.dpad_up){ /// DPAD_UP - SHOOT
             while(functionshootstate<=1){
                 shoot();
             }
             functionshootstate=0;
         }
-        ///
+        //////////////////////////////////////////////////
 
         telemetry.addData("Detected Motif:",motif_code);
         telemetry.update();
-        tun(.7);
-        intake(.7);
+        tun(.5);///0.367 ///square
+        intake(.7); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
 
-        if(gamepad2.right_trigger>0.3){///SHOOT BASIC
+        if(gamepad2.right_trigger>0.3){///SHOOT BASIC ///RIGHT TRIGGER
             while(basicState<=4)
                 storage_basic();
             basicState=0;
@@ -556,23 +557,6 @@ public class TeleOpNou2 extends LinearOpMode {
                 readytoshoot = true;
                 break;
         }
-        /*if(readytoshoot){
-            if(orderBall[1]){
-
-                shoot();
-                revRight();
-                shoot();
-                revRight();
-                shoot();
-            }
-            else{
-                shoot();
-                revLeft();
-                shoot();
-                revLeft();
-                shoot();
-            }
-        }*/
         if (readytoshoot) {
 
             switch (shootState) {
