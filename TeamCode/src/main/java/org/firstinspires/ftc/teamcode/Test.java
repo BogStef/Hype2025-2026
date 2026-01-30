@@ -55,6 +55,7 @@ public class Test extends LinearOpMode {
     public final double revpos2=0.58;
     public final double revpos3 = 0.96;
     public final double viteza_tun = 1;
+    public Limelight3A limelight;
     public DcMotor tun2;
     //double servoPos = 0.0;
     ElapsedTime shootTimer = new ElapsedTime();
@@ -66,15 +67,7 @@ public class Test extends LinearOpMode {
     @Override
     public void runOpMode() {
         initialize();
-        rev = hardwareMap.get(Servo.class, "rev");
-        telemetry.addLine("init");
-        telemetry.update();
-        tun1 = hardwareMap.get(DcMotor.class,"tun1");
-        tun2=hardwareMap.get(DcMotor.class,"tun2");
-        tun1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        tun2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        tun2.setDirection(DcMotor.Direction.REVERSE);
-        toggle_tun=false;
+
         waitForStart();
         distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
         while (opModeIsActive()) {
@@ -93,6 +86,18 @@ public class Test extends LinearOpMode {
         rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
         colorsensor = hardwareMap.get(ColorSensor.class, "colorsensor");
         motif_code = -1;
+        rev = hardwareMap.get(Servo.class, "rev");
+        telemetry.addLine("init");
+        telemetry.update();
+        tun1 = hardwareMap.get(DcMotor.class,"tun1");
+        tun2=hardwareMap.get(DcMotor.class,"tun2");
+        limelight = hardwareMap.get(Limelight3A.class,"limelight");
+        limelight.setPollRateHz(100);
+        limelight.start();
+        tun1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        tun2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        tun2.setDirection(DcMotor.Direction.REVERSE);
+        toggle_tun=false;
     }
     public void rev_left(){
         if(rev.getPosition()==revpos1)

@@ -321,9 +321,10 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
         if (motif_code == -1)  motif_code = motif(); //cauta motif
+        else limelight.stop();
         telemetry.addData("Detected Motif:",motif_code);
-        //tun(.7);
-        //intake(.7);
+        tun(.7);
+        intake(.7);
         storage_basic();
     }
 
