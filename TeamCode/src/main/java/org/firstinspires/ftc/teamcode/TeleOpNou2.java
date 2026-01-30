@@ -66,12 +66,15 @@ public class TeleOpNou2 extends LinearOpMode {
     public Servo push_tun;
     public Servo rev;
 
+    public final double revpos1=0.22;
+    public final double revpos2=0.58;
+    public final double revpos3 = 0.96;
 
 
 
     public final double vmax = 0.7;
     public int motif_code;
-    public float distanta_proxsensorCM=20;
+    public float distanta_proxsensorCM=16;//real = 13.3
 
     public int[] neededOrder = {0,0,0};//0 - purple, 1 - green
 
@@ -319,12 +322,9 @@ public class TeleOpNou2 extends LinearOpMode {
 
         if (motif_code == -1)  motif_code = motif(); //cauta motif
         telemetry.addData("Detected Motif:",motif_code);
-        tun(.7);
-        intake(.7);
-        if(gamepad2.right_trigger>0.2){
-            storage_basic();
-        }
-        updateShoot();
+        //tun(.7);
+        //intake(.7);
+        storage_basic();
     }
 
     boolean lastSquare = false;
@@ -436,15 +436,34 @@ public class TeleOpNou2 extends LinearOpMode {
         stspa.setVelocity(2897 * vmax * rot);
     }
     public void revRight(){
-        rev.setPosition(rev.getPosition()-Math.toRadians(120)/Math.PI);
+        if(rev.getPosition()==revpos1)
+            rev.setPosition(revpos3);
+        else if(rev.getPosition()==revpos2)
+            rev.setPosition(revpos1);
+        else if(rev.getPosition()==revpos3)
+            rev.setPosition(revpos2);
+        else
+            rev.setPosition(revpos1);
     }
     public void revLeft(){
-        rev.setPosition(rev.getPosition()+Math.toRadians(120)/Math.PI);
+        if(rev.getPosition()==revpos1)
+            rev.setPosition(revpos2);
+        else if(rev.getPosition()==revpos2)
+            rev.setPosition(revpos3);
+        else if(rev.getPosition()==revpos3)
+            rev.setPosition(revpos1);
+        else
+            rev.setPosition(revpos1);
     }
     public void shoot() {
-        push_tun.setPosition(1.0);
         shootTimer.reset();
-        shooting = true;
+        push_tun.setPosition(.4);///
+        if(shootTimer.milliseconds()>500){
+            push_tun.setPosition(0);
+            shooting = true;
+        }
+
+
     }
     public int nrBall = 0;
     public int nrBallBasic = 0;
@@ -511,22 +530,34 @@ public class TeleOpNou2 extends LinearOpMode {
         switch(nrBallBasic) {
             case 0:
                 if (distanceCM < distanta_proxsensorCM) {
+                    shootTimer.reset();
                     revLeft();
-                    shoot();
-                    nrBallBasic++;
+                    if(shootTimer.milliseconds()>100) {
+                        shoot();
+                        nrBallBasic++;
+                    }
                 }
+                break;
             case 1:
                 if (distanceCM < distanta_proxsensorCM) {
                     revLeft();
-                    shoot();
-                    nrBallBasic++;
+                    if(shootTimer.milliseconds()>100){
+                        shoot();
+                        nrBallBasic++;
+                    }
+
                 }
+                break;
             case 2:
                 if (distanceCM < distanta_proxsensorCM) {
                     revLeft();
-                    shoot();
-                    nrBallBasic++;
+                    if(shootTimer.milliseconds()>100){
+                        shoot();
+                        nrBallBasic++;
+                    }
+
                 }
+                break;
         }
         if(nrBallBasic>=3) nrBallBasic = 0;
     }
@@ -537,6 +568,7 @@ public class TeleOpNou2 extends LinearOpMode {
         if(result!=null&& result.isValid()){
             Pose3D botpose=result.getBotpose_MT2();
             double tx = result.getTx();
+
 
 
         }

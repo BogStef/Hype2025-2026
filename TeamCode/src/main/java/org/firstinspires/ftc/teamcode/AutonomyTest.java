@@ -10,6 +10,12 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name = "TestCoaie", group = "Autonomous")
@@ -20,6 +26,16 @@ public class AutonomyTest extends OpMode {
     public Follower follower; // Pedro Pathing follower instance
     private int pathState; // Current autonomous path state (state machine)
     private Paths paths; // Paths defined in the Paths class
+    private static ElapsedTime timer= new ElapsedTime();
+    private static ElapsedTime shootTimer= new ElapsedTime();
+    private Servo push_tun,rev;
+    private DcMotor tun1,tun2;
+    public DistanceSensor rangeSensor;
+    private double distanceCM;
+    private int nrBallBasic;
+    private boolean shooting;
+    private double distanta_proxsensorCM;
+
 
     @Override
     public void init() {
@@ -32,6 +48,17 @@ public class AutonomyTest extends OpMode {
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
+
+
+        push_tun = hardwareMap.get(Servo.class,"push_tun");
+        rev = hardwareMap.get(Servo.class,"rev");
+        tun1 = hardwareMap.get(DcMotor.class,"tun1");
+        tun2 = hardwareMap.get(DcMotor.class,"tun2");
+        tun1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        tun2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        tun2.setDirection(DcMotor.Direction.REVERSE);
+
+
     }
 
     @Override
@@ -45,6 +72,44 @@ public class AutonomyTest extends OpMode {
         panelsTelemetry.debug("Y", follower.getPose().getY());
         panelsTelemetry.debug("Heading", follower.getPose().getHeading());
         panelsTelemetry.update(telemetry);
+
+        distanceCM = rangeSensor.getDistance(DistanceUnit.CM);//update continuu la distanta
+    }
+    public void shoot() {
+        if(revLeft())
+            push_tun.setPosition(1.0);
+        shootTimer.reset();
+        shooting = true;
+    }
+    public boolean revLeft(){
+        if(rev.getPosition()==0.01){
+            rev.setPosition(0.35);
+        }
+        return true;
+    }
+    public void revRight(){}
+    public void storage_basic(){
+        switch(nrBallBasic) {
+            case 0:
+                if (distanceCM < distanta_proxsensorCM) {
+                    revLeft();
+                    shoot();
+                    nrBallBasic++;
+                }
+            case 1:
+                if (distanceCM < distanta_proxsensorCM) {
+                    revLeft();
+                    shoot();
+                    nrBallBasic++;
+                }
+            case 2:
+                if (distanceCM < distanta_proxsensorCM) {
+                    revLeft();
+                    shoot();
+                    nrBallBasic++;
+                }
+        }
+        if(nrBallBasic>=3) nrBallBasic = 0;
     }
 
     public static class Paths {
@@ -84,13 +149,15 @@ public class AutonomyTest extends OpMode {
         switch (pathState) {
 
             case 0:
+                if(timer.time()>1)
                 follower.followPath(paths.Path1);
+                timer.reset();
                 pathState = 1;
                 break;
 
             case 1:
-                if (!follower.isBusy()) {
-                    follower.followPath(paths.Path2);
+                if (!follower.isBusy()&&timer.time()>1) {
+
                     pathState = 2;
                 }
                 break;
