@@ -16,6 +16,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -39,6 +40,7 @@ import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import java.util.List;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 
 @TeleOp(name="TeleOp - BUN")
@@ -57,6 +59,7 @@ public class TeleOpNou2 extends LinearOpMode {
     Follower follower;
     public boolean toggle_tun;
     public DistanceSensor rangeSensor;
+    boolean lastDpadUp = false;
 
 
 
@@ -66,9 +69,11 @@ public class TeleOpNou2 extends LinearOpMode {
     public Servo push_tun;
     public Servo rev;
 
-    public final double revpos1=0.22;
-    public final double revpos2=0.58;
-    public final double revpos3 = 0.96;
+    public CRServo improvizatie_intake;
+
+    public final double revpos1=0.2;
+    public final double revpos2=0.56;
+    public final double revpos3 = 0.94;
 
 
 
@@ -80,25 +85,19 @@ public class TeleOpNou2 extends LinearOpMode {
 
     int shootState=0;
 
-    public int getColor() {
+    public int getColor() { /// 0==mov 1==green
         double red, blue, green, alpha, error;
-        error = 0;
+        error = 120;
         red = colorsensor.red();
         blue = colorsensor.blue();
         green = colorsensor.green();
         alpha = colorsensor.alpha();
-        if ((red == 0 + error || red == 0 - error) &&
-                (blue == 0 + error || blue == 0 - error) &&
-                (green == 0 + error || green == 0 - error) &&
-                (alpha == 0 + error || alpha == 0 - error)) {
-            return 0;
-        }
-        if ((red == 1 + error || red == 1 - error) &&
-                (blue == 1 + error || blue == 1 - error) &&
-                (green == 0 + error || green == 0 - error) &&
-                (alpha == 0 + error || alpha == 0 - error)) {
+        if(green>95&&green>blue&&green>red){
             return 1;
         }
+        if(red>green||blue>green)
+            return 0;
+
         return -1;
     }
 
@@ -138,32 +137,44 @@ public class TeleOpNou2 extends LinearOpMode {
         stspa.setDirection(DcMotor.Direction.REVERSE);
         stft.setDirection(DcMotor.Direction.REVERSE);
 
+        stft.setVelocityPIDFCoefficients(p, i, d, f);
+        drft.setVelocityPIDFCoefficients(p, i, d, f);
+        stspa.setVelocityPIDFCoefficients(p, i, d, f);
+        drspa.setVelocityPIDFCoefficients(p, i, d, f);
+
+
+
         tun1 = hardwareMap.get(DcMotor.class, "tun1");
         tun2 = hardwareMap.get(DcMotor.class, "tun2");
         tun1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         tun2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        tun2.setDirection(DcMotor.Direction.REVERSE);
+        tun1.setDirection(DcMotor.Direction.REVERSE);
 
         intake_up = hardwareMap.get(DcMotor.class, "intake_up");///intake
         intake_down = hardwareMap.get(DcMotor.class, "intake_down");
         intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intake_up.setDirection(DcMotor.Direction.REVERSE);
+        intake_down.setDirection(DcMotor.Direction.REVERSE);
 
         imu = hardwareMap.get(IMU.class, "imu");///gyro
         imu.initialize(
                 new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.UP))
 
         );
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");///camera
+        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.LEFT, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD)));
+        limelight = hardwareMap.get(Limelight3A.class, "Ethernet Device");///camera
         limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
         limelight.start(); // This tells Limelight to start looking!
         limelight.pipelineSwitch(0);
+        limelight.stop();
 
         colorsensor = hardwareMap.get(ColorSensor.class, "colorsensor");
 
 
         push_tun = hardwareMap.get(Servo.class,"push_tun");
         rev = hardwareMap.get(Servo.class,"rev");
+        improvizatie_intake = hardwareMap.get(CRServo.class,"improvizatie_intake");
 
         pass_intake = false;///pass intake
         toggle_tun = false;
@@ -184,13 +195,14 @@ public class TeleOpNou2 extends LinearOpMode {
     double maxi = 0;
 
 
-    double p = 25;
+    double p = 10;//25
     double i = 0;
-    double d = 10;
-    double f = 36;
+    double d = 5;//10
+    double f = 1670;//36
 
     boolean sort;
     boolean shooting = false;
+    boolean lastrighttrigger=false;
 
     //PID
 
@@ -218,74 +230,6 @@ public class TeleOpNou2 extends LinearOpMode {
         double drftpwr;
         double drspapwr;
 
-        if (starerun) {
-
-            /*nghi = unghi() + resunghi;
-            if (unghi < 0) {
-                unghi = unghi + 360;
-            }
-
-            final double x = Math.pow(-gamepad1.left_stick_x, 3.0);
-            final double y = Math.pow(gamepad1.left_stick_y, 3.0);
-
-            final double rotation = Math.pow(gamepad1.right_stick_x * 0.8, 3);
-            final double direction = Math.atan2(x, y) + Math.toRadians(unghi);
-            final double speed = Math.min(1.0, Math.sqrt(x * x + y * y));
-
-            stftpwr = speed * Math.sin(direction + Math.PI / 4.0) + rotation;
-            drftpwr = speed * Math.cos(direction + Math.PI / 4.0) - rotation;
-            stspapwr = speed * Math.cos(direction + Math.PI / 4.0) + rotation;
-            drspapwr = speed * Math.sin(direction + Math.PI / 4.0) - rotation;
-
-            double raport=0.657;
-            double vit=2787;
-
-
-
-            if(gamepad2.right_trigger == 1)
-            {
-                stft.setVelocity(stftpwr*raport*vit - gamepad2.right_stick_y/4.5);
-                drft.setVelocity(drftpwr*raport*vit - gamepad2.right_stick_y/4.5);
-                stspa.setVelocity(stspapwr*raport*vit - gamepad2.right_stick_y/4.5);
-                drspa.setVelocity(drspapwr*raport*vit - gamepad2.right_stick_y/4.5);
-            }else
-            {
-                stft.setVelocity(stftpwr*raport*vit);
-                drft.setVelocity(drftpwr*raport*vit);
-                stspa.setVelocity(stspapwr*raport*vit);
-                drspa.setVelocity(drspapwr*raport*vit);
-            }*/
-            double speed;
-            if (gamepad2.right_trigger == 1) {
-                speed = -gamepad1.left_stick_y - gamepad2.right_stick_y / 3;
-            } else {
-                speed = -gamepad1.left_stick_y;
-            }
-
-            final double turn = gamepad1.right_stick_x;
-            final double strafe = gamepad1.left_stick_x;
-
-            stftpwr = speed + turn + strafe;
-            drftpwr = speed - turn - strafe;
-            stspapwr = speed + turn - strafe;
-            drspapwr = speed - turn + strafe;
-
-            double raport = 0.585; //experimental
-            double vit = 2787; //435 rpm / 60 * 345.5 ticks/rev
-
-            stft.setVelocity(stftpwr * raport * vit);
-            drft.setVelocity(drftpwr * raport * vit);
-            stspa.setVelocity(stspapwr * raport * vit);
-            drspa.setVelocity(drspapwr * raport * vit);
-            telemetry.update();
-        } else {
-
-
-            stft.setVelocityPIDFCoefficients(p, i, d, f);
-            drft.setVelocityPIDFCoefficients(p, i, d, f);
-            stspa.setVelocityPIDFCoefficients(p, i, d, f);
-            drspa.setVelocityPIDFCoefficients(p, i, d, f);
-            //PID
 
             double speed;
             if (gamepad2.right_trigger == 1) {
@@ -302,45 +246,70 @@ public class TeleOpNou2 extends LinearOpMode {
             stspapwr = speed + turn - strafe;
             drspapwr = speed - turn + strafe;
 
-            double raport = 0.585; //experimental
+            double raport =0.585; /// 0.585; //experimental
             double vit = 2787; //435 rpm / 60 * 345.5 ticks/rev
 
-            stft.setVelocity(stftpwr * raport * vit);
-            drft.setVelocity(drftpwr * raport * vit);
-            stspa.setVelocity(stspapwr * raport * vit);
-            drspa.setVelocity(drspapwr * raport * vit);
-            telemetry.update();
+//            stft.setVelocity(stftpwr * raport * vit);
+//            drft.setVelocity(drftpwr * raport * vit);
+//            stspa.setVelocity(stspapwr * raport * vit);
+//            drspa.setVelocity(drspapwr * raport * vit);
 
+        stftpwr = Range.clip(stftpwr, -1, 1);
+        drftpwr = Range.clip(drftpwr, -1, 1);
+        stspapwr = Range.clip(stspapwr, -1, 1);
+        drspapwr = Range.clip(drspapwr, -1, 1);
+        double max = Math.max(Math.abs(stftpwr), Math.abs(drftpwr));
+        max = Math.max(max, Math.abs(stspapwr));
+        max = Math.max(max, Math.abs(drspapwr));
 
+        if(max > 1){
+            stftpwr /= max;
+            drftpwr /= max;
+            stspapwr /= max;
+            drspapwr /= max;
         }
 
-        distanceCM = rangeSensor.getDistance(DistanceUnit.CM);//update continuu la distanta
+        double maxspeed=0.7;
+        stft.setPower(stftpwr*maxspeed);
+        drft.setPower(drftpwr*maxspeed);
+        stspa.setPower(stspapwr*maxspeed);
+        drspa.setPower(drspapwr*maxspeed);
+        ////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////
+
+        //distanceCM = rangeSensor.getDistance(DistanceUnit.CM);//update continuu la distanta
+        limelight.stop();
 
 
-        if (motif_code == -1)  motif_code = motif(); //cauta motif
-        else limelight.stop();
+//        if (motif_code == -1)  motif_code = motif(); //cauta motif
+//        else limelight.stop();
 
         ///OVVERIDEURI
         force_right();///PAD URI
         force_left();
-        if(gamepad2.dpad_up){ /// DPAD_UP - SHOOT
-            while(functionshootstate<=1){
-                shoot();
-            }
-            functionshootstate=0;
-        }
-        //////////////////////////////////////////////////
 
-        telemetry.addData("Detected Motif:",motif_code);
-        telemetry.update();
-        tun(.5);///0.367 ///square
+
+        //colorsensor.enableLed(false);
+
+        boolean currentrighttrigger=gamepad2.right_bumper;
+
+        if(currentrighttrigger && !lastrighttrigger){
+            shooting=true;
+        }
+        lastrighttrigger=currentrighttrigger;
+
+        if(shooting){
+            shoot();
+            if(functionshootstate == 2){
+                shooting = false;
+                functionshootstate = 0;
+            }
+        }
+
+        tun(1);///0.367 ///square
         intake(.7); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
 
-        if(gamepad2.right_trigger>0.3){///SHOOT BASIC ///RIGHT TRIGGER
-            while(basicState<=4)
-                storage_basic();
-            basicState=0;
-        }
+
 
 
 
@@ -389,10 +358,12 @@ public class TeleOpNou2 extends LinearOpMode {
         if (gamepad2.triangle) {
             intake_up.setPower(vit);
             intake_down.setPower(vit);
+            improvizatie_intake.setPower(.6);
         }
         if (gamepad2.cross) {
             intake_up.setPower(0);
             intake_down.setPower(0);
+            improvizatie_intake.setPower(0);
         }
 
         if (gamepad2.circle) {
@@ -402,7 +373,9 @@ public class TeleOpNou2 extends LinearOpMode {
                 intake_down.setPower(vit);
             } else {
                 intake_down.setPower(-1*vit);
+                intake_up.setPower(-vit);
             }
+            improvizatie_intake.setPower(0);
         }
     }
 
@@ -459,7 +432,7 @@ public class TeleOpNou2 extends LinearOpMode {
     ///nico stie
     public double unghi() {
 
-        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.LEFT, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD)));
+
         double unghi = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         //telemetry.addData(" ", unghi);
         //telemetry.update();
@@ -474,45 +447,62 @@ public class TeleOpNou2 extends LinearOpMode {
         drspa.setVelocity(2897 * -vmax * rot);
         stspa.setVelocity(2897 * vmax * rot);
     }
-    public void revRight(){
-        if(rev.getPosition()==revpos1)
+    public void revRight() {
+        double pos = rev.getPosition();
+        double error = 0.01;
+
+        if (Math.abs(pos - revpos1) < error) {
             rev.setPosition(revpos3);
-        else if(rev.getPosition()==revpos2)
+        } else if (Math.abs(pos - revpos2) < error) {
             rev.setPosition(revpos1);
-        else if(rev.getPosition()==revpos3)
+        } else if (Math.abs(pos - revpos3) < error) {
             rev.setPosition(revpos2);
-        else
+        } else {
             rev.setPosition(revpos1);
+        }
     }
-    public void revLeft(){
-        if(rev.getPosition()==revpos1)
+
+    public void revLeft() {
+        double pos = rev.getPosition();
+        double error = 0.01;
+
+        if (Math.abs(pos - revpos1) < error) {
             rev.setPosition(revpos2);
-        else if(rev.getPosition()==revpos2)
+        } else if (Math.abs(pos - revpos2) < error) {
             rev.setPosition(revpos3);
-        else if(rev.getPosition()==revpos3)
+        } else if (Math.abs(pos - revpos3) < error) {
             rev.setPosition(revpos1);
-        else
+        } else {
             rev.setPosition(revpos1);
+        }
     }
+
 
     public int functionshootstate=0;
 
-    public void shoot() {///face pac pac si face shooting true
+    public void shoot() {
+        if(!shooting) return;
+
         switch(functionshootstate){
             case 0:
                 shootTimer.reset();
-                push_tun.setPosition(.4);///
-                functionshootstate++;
+                push_tun.setPosition(.50);
+                functionshootstate = 1;
+                break;
+
             case 1:
-                if(shootTimer.milliseconds()>90){
-                    push_tun.setPosition(0);
-                    functionshootstate++;
+                if(shootTimer.milliseconds() > 200){
+                    push_tun.setPosition(.28);
+                    functionshootstate = 2;
                 }
+                break;
 
+            case 2:
+                // gata, așteaptă reset extern
+                break;
         }
-
-
     }
+
     public int nrBall = 0;
     public int nrBallBasic = 0;
     public boolean[] orderBall = {false , false , false};
@@ -612,58 +602,12 @@ public class TeleOpNou2 extends LinearOpMode {
 
     }
     int basicState=0;
-    int shoot_time = 20; //todo test value
-    public void storage_basic(){
-        if(distanceCM>=distanta_proxsensorCM) return;
-        switch (basicState){
-            case 0:
-                while(functionshootstate<=1)
-                    shoot();
-                functionshootstate=0;
+    int shoot_time = 500; //todo test value
 
-                shootTimer.reset();
-                basicState++;
-                break;
-            case 1:
-                if(shootTimer.milliseconds() > shoot_time) {
-                    revLeft();
-                    shootTimer.reset();
-                    basicState++;
-                }
-                break;
-            case 2:
-                if(shootTimer.milliseconds() > shoot_time) {
-                    while(functionshootstate<=1)
-                        shoot();
-                    functionshootstate=0;
-                    shootTimer.reset();
-                    basicState++;
-                }
-                break;
-            case 3:
-                if(shootTimer.milliseconds() > shoot_time) {
-                    revLeft();
-                    shootTimer.reset();
-                    basicState++;
-                }
-                break;
-            case 4:
-                if(shootTimer.milliseconds() > shoot_time) {
-                    while(functionshootstate<=1)
-                        shoot();
-                    functionshootstate=0;
-                    shootTimer.reset();
-                    basicState++;
-                }
-                break;
-        }
-        /*
-        shoot
-        revleft
-        shoot
-        revleft
-        shoot
-         */
+    public void storage_basic(){
+        if(distanceCM>distanta_proxsensorCM) return;
+            revLeft();
+
 
     }
     public void orientare(){
@@ -674,9 +618,28 @@ public class TeleOpNou2 extends LinearOpMode {
             Pose3D botpose=result.getBotpose_MT2();
             double tx = result.getTx();
 
+            double power = 0.2;
+
+            if(tx > 1){ // dreapta
+                stft.setPower(power);
+                drft.setPower(-power);
+                stspa.setPower(power);
+                drspa.setPower(-power);
+            } else if(tx < -1){ // stanga
+                stft.setPower(-power);
+                drft.setPower(power);
+                stspa.setPower(-power);
+                drspa.setPower(power);
+            } else { // ținta centrată
+                stft.setPower(0);
+                drft.setPower(0);
+                stspa.setPower(0);
+                drspa.setPower(0);
+            }
 
 
         }
+
 
     }
 
