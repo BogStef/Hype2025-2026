@@ -71,9 +71,9 @@ public class TeleOpNou2 extends LinearOpMode {
 
     public CRServo improvizatie_intake;
 
-    public final double revpos1=0.2;
-    public final double revpos2=0.56;
-    public final double revpos3 = 0.94;
+    public final double revpos1=0.06;
+    public final double revpos2=0.42;
+    public final double revpos3 = 0.8;
 
 
 
@@ -99,6 +99,7 @@ public class TeleOpNou2 extends LinearOpMode {
             return 0;
 
         return -1;
+
     }
 
     /// TODO - colorsensor test
@@ -167,7 +168,7 @@ public class TeleOpNou2 extends LinearOpMode {
         limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
         limelight.start(); // This tells Limelight to start looking!
         limelight.pipelineSwitch(0);
-        limelight.stop();
+
 
         colorsensor = hardwareMap.get(ColorSensor.class, "colorsensor");
 
@@ -307,7 +308,13 @@ public class TeleOpNou2 extends LinearOpMode {
         }
 
         tun(1);///0.367 ///square
-        intake(.7); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
+        //intake(.7); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
+        rev.setPosition((1-gamepad2.right_stick_y)/2);
+        telemetry.addData("rev pos ",rev.getPosition());
+
+        if (gamepad2.triangle){
+                orientare();
+        }
 
 
 
@@ -605,12 +612,12 @@ public class TeleOpNou2 extends LinearOpMode {
     int shoot_time = 500; //todo test value
 
     public void storage_basic(){
-        if(distanceCM>distanta_proxsensorCM) return;
-            revLeft();
 
 
     }
+    boolean orientaregata=false;
     public void orientare(){
+        orientaregata=false;
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
         limelight.updateRobotOrientation(orientation.getYaw());
         LLResult result=limelight.getLatestResult();
@@ -620,17 +627,17 @@ public class TeleOpNou2 extends LinearOpMode {
 
             double power = 0.2;
 
-            if(tx > 1){ // dreapta
+            if(tx > 1){
                 stft.setPower(power);
                 drft.setPower(-power);
                 stspa.setPower(power);
                 drspa.setPower(-power);
-            } else if(tx < -1){ // stanga
+            } else if(tx < -1){
                 stft.setPower(-power);
                 drft.setPower(power);
                 stspa.setPower(-power);
                 drspa.setPower(power);
-            } else { // ținta centrată
+            } else {
                 stft.setPower(0);
                 drft.setPower(0);
                 stspa.setPower(0);
@@ -639,6 +646,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
         }
+        orientaregata=true;
 
 
     }
