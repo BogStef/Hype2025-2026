@@ -27,7 +27,7 @@ public class AutonomyDreapta extends OpMode {
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));
-
+        pathState=0;
         paths = new Paths(follower); // Build paths
 
         panelsTelemetry.debug("Status", "Initialized");
@@ -43,10 +43,8 @@ public class AutonomyDreapta extends OpMode {
         panelsTelemetry.debug("Y", follower.getPose().getY());
         panelsTelemetry.debug("Heading", follower.getPose().getHeading());
         panelsTelemetry.update(telemetry);
-        if(!done){
-            follower.followPath(paths.Path1);
-            if(!follower.isBusy()) done=true;
-        }
+
+
 
 
 
@@ -54,7 +52,7 @@ public class AutonomyDreapta extends OpMode {
 
 
     public static class Paths {
-        public PathChain Path1;
+        public PathChain Path1,Path2;
 
         public Paths(Follower follower) {
             Path1 = follower.pathBuilder().addPath(
@@ -66,6 +64,23 @@ public class AutonomyDreapta extends OpMode {
                     ).setConstantHeadingInterpolation( Math.toRadians(90))
 
                     .build();
+            Path2 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(90, 7.5),
+
+                                    new Pose(72, 72)
+                            )
+                    ).setConstantHeadingInterpolation( Math.toRadians(90))
+
+                    .build();
+        }
+
+    }
+
+    void auto(){
+        switch(pathState){
+            case 0: follower.followPath(paths.Path1);
+
         }
     }
 
