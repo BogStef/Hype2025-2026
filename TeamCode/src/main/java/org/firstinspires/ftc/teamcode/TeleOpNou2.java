@@ -186,6 +186,7 @@ public class TeleOpNou2 extends LinearOpMode {
         follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));///todo
 
         rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
+
     }
 
     boolean pressedl = false;
@@ -293,10 +294,16 @@ public class TeleOpNou2 extends LinearOpMode {
             }
         }
 
-        tun(1);///0.367 ///square
-        intake(.7); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
-        rev.setPosition((1-gamepad2.right_stick_y)/2);
-        telemetry.addData("rev pos ",rev.getPosition());
+        //tun(1);///0.367 ///square
+        //intake(.7); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
+        //rev.setPosition((1-gamepad2.right_stick_y)/2);
+
+        if (gamepad2.right_trigger > 0.3 && !storage_basic_running) {
+            storage_basic_running = true;
+            basic_state = 0;
+            timer_storage_basic.reset();
+        }
+        storage_basic();
 
 
 
@@ -576,12 +583,14 @@ public class TeleOpNou2 extends LinearOpMode {
         }
 
     }
+
+
     int basic_state=0;
     boolean storage_basic_running = false;
+    ElapsedTime timer_storage_basic=new ElapsedTime();
     public void storage_basic(){
         if(!storage_basic_running) return;
-        ElapsedTime timer;
-        timer = new ElapsedTime();
+
         int revtime=90;
         int shoottime=50;
         switch (basic_state){
@@ -590,47 +599,47 @@ public class TeleOpNou2 extends LinearOpMode {
                 if(functionshootstate>=2){
                     shooting=false;
                     functionshootstate=0;
-                    timer.reset();
+                    timer_storage_basic.reset();
                     basic_state++;
                 }
                 break;
             case 1://rev left
-                if(timer.milliseconds()>shoottime){
+                if(timer_storage_basic.milliseconds()>shoottime){
                     revLeft();
-                    timer.reset();
+                    timer_storage_basic.reset();
                     basic_state++;
                 }
                 break;
             case 2://shoot
-                if(timer.milliseconds()>revtime){
+                if(timer_storage_basic.milliseconds()>revtime){
                     shooting=true;
                     if(functionshootstate>=2){
                         shooting=false;
                         functionshootstate=0;
-                        timer.reset();
+                        timer_storage_basic.reset();
                         basic_state++;
                     }
                 }
                 break;
             case 3://rev left
-                if(timer.milliseconds()>shoottime){
+                if(timer_storage_basic.milliseconds()>shoottime){
                     revLeft();
-                    timer.reset();
+                    timer_storage_basic.reset();
                     basic_state++;
                 }
                 break;
             case 4://shoot
-                if(timer.milliseconds()>revtime){
+                if(timer_storage_basic.milliseconds()>revtime){
                     shooting=true;
                     if(functionshootstate>=2){
                         shooting=false;
                         functionshootstate=0;
-                        timer.reset();
+                        timer_storage_basic.reset();
                         basic_state++;
                     }
                 }
                 break;
-            case 5: storage_basic_running = false;
+            case 5: storage_basic_running = false;///stop
                 break;
         }
     }
