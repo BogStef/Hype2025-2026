@@ -208,13 +208,9 @@ public class TeleOpNou2 extends LinearOpMode {
     //PID
 
     public void run() {
-        // valorile pt senzoru de proxi
-        //telemetry.addData("Distance CM", distanceCM);
-        telemetry.update();//da pe driver hub
-
+        telemetry.update();
         boolean isTriggerPressed = gamepad1.cross;
         boolean isTriggerPressedb = gamepad1.circle;
-
         if (isTriggerPressedb && !pressedb) {
             starerun = !starerun;
         }
@@ -277,28 +273,18 @@ public class TeleOpNou2 extends LinearOpMode {
         drspa.setPower(drspapwr*maxspeed);
         ////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////
-
-        //distanceCM = rangeSensor.getDistance(DistanceUnit.CM);//update continuu la distanta
         limelight.stop();
 
 
-//        if (motif_code == -1)  motif_code = motif(); //cauta motif
-//        else limelight.stop();
+      if (motif_code == -1)  motif_code = motif(); //cauta motif
+      else limelight.stop();
 
-        ///OVVERIDEURI
-        force_right();///PAD URI
-        force_left();
-
-
-        //colorsensor.enableLed(false);
 
         boolean currentrighttrigger=gamepad2.right_bumper;
-
         if(currentrighttrigger && !lastrighttrigger){
             shooting=true;
         }
         lastrighttrigger=currentrighttrigger;
-
         if(shooting){
             shoot();
             if(functionshootstate == 2){
@@ -308,13 +294,9 @@ public class TeleOpNou2 extends LinearOpMode {
         }
 
         tun(1);///0.367 ///square
-        //intake(.7); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
+        intake(.7); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
         rev.setPosition((1-gamepad2.right_stick_y)/2);
         telemetry.addData("rev pos ",rev.getPosition());
-
-        if (gamepad2.triangle){
-                orientare();
-        }
 
 
 
@@ -340,22 +322,8 @@ public class TeleOpNou2 extends LinearOpMode {
             tun2.setPower(0);
         }
     }
-    boolean lastLeftDpad = false;
-    void force_left() {
-        boolean currentLeftDpad=gamepad2.dpad_left;
-        if(currentLeftDpad && !lastLeftDpad){
-            revLeft();
-        }
-        lastLeftDpad = currentLeftDpad;
-    }
-    boolean lastRightDpad=false;
-    void force_right(){
-        boolean currentRightDpad=gamepad2.dpad_right;
-        if(currentRightDpad && !lastRightDpad){
-            revRight();
-        }
-        lastRightDpad = currentRightDpad;
-    }
+
+
 
 
 
@@ -608,12 +576,63 @@ public class TeleOpNou2 extends LinearOpMode {
         }
 
     }
-    int basicState=0;
-    int shoot_time = 500; //todo test value
-
+    int basic_state=0;
+    boolean storage_basic_running = false;
     public void storage_basic(){
-
-
+        if(!storage_basic_running) return;
+        ElapsedTime timer;
+        timer = new ElapsedTime();
+        int revtime=90;
+        int shoottime=50;
+        switch (basic_state){
+            case 0://shoot
+                shooting=true;
+                if(functionshootstate>=2){
+                    shooting=false;
+                    functionshootstate=0;
+                    timer.reset();
+                    basic_state++;
+                }
+                break;
+            case 1://rev left
+                if(timer.milliseconds()>shoottime){
+                    revLeft();
+                    timer.reset();
+                    basic_state++;
+                }
+                break;
+            case 2://shoot
+                if(timer.milliseconds()>revtime){
+                    shooting=true;
+                    if(functionshootstate>=2){
+                        shooting=false;
+                        functionshootstate=0;
+                        timer.reset();
+                        basic_state++;
+                    }
+                }
+                break;
+            case 3://rev left
+                if(timer.milliseconds()>shoottime){
+                    revLeft();
+                    timer.reset();
+                    basic_state++;
+                }
+                break;
+            case 4://shoot
+                if(timer.milliseconds()>revtime){
+                    shooting=true;
+                    if(functionshootstate>=2){
+                        shooting=false;
+                        functionshootstate=0;
+                        timer.reset();
+                        basic_state++;
+                    }
+                }
+                break;
+            case 5: storage_basic_running = false;
+                break;
+        }
     }
     boolean orientaregata=false;
     public void orientare(){
