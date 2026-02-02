@@ -281,6 +281,7 @@ public class TeleOpNou2 extends LinearOpMode {
       else limelight.stop();
 
 
+      /// OVVERIDE LA SHOOT
         boolean currentrighttrigger=gamepad2.right_bumper;
         if(currentrighttrigger && !lastrighttrigger){
             shooting=true;
@@ -298,7 +299,7 @@ public class TeleOpNou2 extends LinearOpMode {
         //intake(.7); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
         //rev.setPosition((1-gamepad2.right_stick_y)/2);
 
-        if (gamepad2.right_trigger > 0.3 && !storage_basic_running) {
+        if (gamepad2.right_trigger > 0.3 && !storage_basic_running) { /// pornim storage basic
             storage_basic_running = true;
             basic_state = 0;
             timer_storage_basic.reset();
@@ -307,9 +308,22 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
 
+        /// ORIENTARE
+        // apasa driver1 oe a
+        if (gamepad1.a && !aPrev) {
+            alignRunning = true;
+            orientaregata = false;
+        }
+        aPrev = gamepad1.a;
 
+        // ruleaza alinierea
+        if (alignRunning) {
+            orientare();
 
-
+            if (orientaregata) {
+                alignRunning = false; // stop
+            }
+        }
     }
 
     boolean lastSquare = false;
@@ -379,7 +393,7 @@ public class TeleOpNou2 extends LinearOpMode {
             int id = tag.getFiducialId();
 
             if (id == 21 || id == 22 || id == 23) {
-                motif_code = id;       // Salvăm motiv-ul definitiv
+                motif_code = id;
                 telemetry.addData("Motif Found", id);
                 telemetry.update();
                 neededOrder[id-21] = 1;
@@ -644,50 +658,40 @@ public class TeleOpNou2 extends LinearOpMode {
         }
     }
     boolean orientaregata=false;
-    public void orientare(){
-        orientaregata=false;
-        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-        limelight.updateRobotOrientation(orientation.getYaw());
-        LLResult result=limelight.getLatestResult();
-        if(result!=null&& result.isValid()){
-            Pose3D botpose=result.getBotpose_MT2();
+    boolean alignRunning = false;
+    boolean aPrev = false;
+    public void orientare() {
+        LLResult result = limelight.getLatestResult();
+
+        if (result != null && result.isValid()) {
             double tx = result.getTx();
 
-            double power = 0.2;
+            double kP = 0.01;
+            double power = Range.clip(kP * tx, -0.25, 0.25);
 
-            if(tx > 1){
-                stft.setPower(power);
-                drft.setPower(-power);
-                stspa.setPower(power);
-                drspa.setPower(-power);
-            } else if(tx < -1){
-                stft.setPower(-power);
-                drft.setPower(power);
-                stspa.setPower(-power);
-                drspa.setPower(power);
-            } else {
+            stft.setPower(power);
+            drft.setPower(-power);
+            stspa.setPower(power);
+            drspa.setPower(-power);
+
+            // aliniat?
+            if (Math.abs(tx) <= 1) {
                 stft.setPower(0);
                 drft.setPower(0);
                 stspa.setPower(0);
                 drspa.setPower(0);
+                orientaregata = true;
+            } else {
+                orientaregata = false;
             }
 
-
+        } else {
+            // nu vede target
+            stft.setPower(0);
+            drft.setPower(0);
+            stspa.setPower(0);
+            drspa.setPower(0);
+            orientaregata = false;
         }
-        orientaregata=true;
-
-
     }
-
-
-
-
-
-
-
-
-
-
-
-
 }
