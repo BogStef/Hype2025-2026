@@ -47,8 +47,8 @@ import com.qualcomm.robotcore.util.Range;
 
 public class TeleOpNou2 extends LinearOpMode {
     public DcMotorEx drft, stft, drspa, stspa;
-    public DcMotor tun1;
-    public DcMotor tun2;
+    public DcMotorEx tun1;
+    public DcMotorEx tun2;
     public IMU imu;
     public double distanceCM;
     public ColorSensor colorsensor;
@@ -149,8 +149,8 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
 
-        tun1 = hardwareMap.get(DcMotor.class, "tun1");
-        tun2 = hardwareMap.get(DcMotor.class, "tun2");
+        tun1 = hardwareMap.get(DcMotorEx.class, "tun1");
+        tun2 = hardwareMap.get(DcMotorEx.class, "tun2");
         tun1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         tun2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         tun1.setDirection(DcMotor.Direction.REVERSE);
@@ -213,12 +213,13 @@ public class TeleOpNou2 extends LinearOpMode {
     //PID
     public double calculateDistTun() {
         double dist_tun =0.00;
+        double tx,ty,ta = 0.00;
 
         LLResult result = limelight.getLatestResult();
         if (result != null && result.isValid()) {
-            double tx = result.getTx(); // How far left or right the target is (degrees)
-            double ty = result.getTy(); // How far up or down the target is (degrees)
-            double ta = result.getTa(); // How big the target looks (0%-100% of the image)
+            tx = result.getTx(); // How far left or right the target is (degrees)
+             ty = result.getTy(); // How far up or down the target is (degrees)
+             ta = result.getTa(); // How big the target looks (0%-100% of the image)
 
             dist_tun = Math.sqrt(75*75 + tx*tx + ty*ty) + 10;
 
@@ -228,16 +229,8 @@ public class TeleOpNou2 extends LinearOpMode {
         } else {
             //telemetry.addData("Limelight", "No Targets");
         }
-        if (result != null && result.isValid()) {
-            Pose3D botpose = result.getBotpose();
-            if (botpose != null) {
-                double x = botpose.getPosition().x;
-                double y = botpose.getPosition().y;
-                //telemetry.addData("MT1 Location", "(" + x + ", " + y + ")");
-            }
-        }
 
-        return dist_tun; // daca dist_tun e 0 atunci nu vede cosul
+        return ta; // daca dist_tun e 0 atunci nu vede cosul
     }
 
     public double calcVitezaTun () {
@@ -378,8 +371,8 @@ public class TeleOpNou2 extends LinearOpMode {
         else telemetry.clear();
         telemetry.update();
 
-        double distance_tun = calculateDistTun();
-        telemetry.addData("distance cos: ",distance_tun);//afiseaza distanta pana la tuin
+        double ta = calculateDistTun();
+        telemetry.addData("procentaj qr: ",ta);
         telemetry.update();
 
 
