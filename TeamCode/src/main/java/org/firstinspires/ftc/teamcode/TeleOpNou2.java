@@ -164,10 +164,10 @@ public class TeleOpNou2 extends LinearOpMode {
 
         imu = hardwareMap.get(IMU.class, "imu");///gyro
         imu.initialize(
-                new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.UP))
+                new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.RIGHT, RevHubOrientationOnRobot.UsbFacingDirection.UP))
 
         );
-        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.LEFT, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD)));
+
         limelight = hardwareMap.get(Limelight3A.class, "Ethernet Device");///camera
         limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
         limelight.start(); // This tells Limelight to start looking!
@@ -212,18 +212,16 @@ public class TeleOpNou2 extends LinearOpMode {
 
     //PID
     public double calculateDistTun() {
-        double dist_tun =0.00;
-        double tx,ty,ta = 0.00;
+        double ta = 0.00;
+        double scale=13674.56;
 
         LLResult result = limelight.getLatestResult();
         if (result != null && result.isValid()) {
-            tx = result.getTx(); // How far left or right the target is (degrees)
-             ty = result.getTy(); // How far up or down the target is (degrees)
-             ta = result.getTa(); // How big the target looks (0%-100% of the image)
-
-        } else {}
-
-        return (ta-3.75)/(-0.015);
+             ta = result.getTa(); // 1 hypemetru = 0.009 mm
+        }
+        if(ta!=0)
+         return scale/ta;
+        else return 0;
     }
 
     public double calcVitezaTun () {
@@ -302,11 +300,12 @@ public class TeleOpNou2 extends LinearOpMode {
             drspapwr /= max;
         }
 
-        double maxspeed=0.7;
-        stft.setPower(stftpwr*maxspeed);
-        drft.setPower(drftpwr*maxspeed);
-        stspa.setPower(stspapwr*maxspeed);
-        drspa.setPower(drspapwr*maxspeed);
+        double maxspeed=0.4;
+            stft.setPower(stftpwr*maxspeed);
+            drft.setPower(drftpwr*maxspeed);
+            stspa.setPower(stspapwr*maxspeed);
+            drspa.setPower(drspapwr*maxspeed);
+
         ////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////
 
@@ -344,28 +343,26 @@ public class TeleOpNou2 extends LinearOpMode {
 
         /// ORIENTARE
         // apasa driver1 oe a
-        if (gamepad1.square && !aPrev) {
-            alignRunning = true;
-            orientaregata = false;
-        }
-        aPrev = gamepad1.square;
+        boolean currentA = gamepad1.square;
 
-        // ruleaza alinierea
+        if (currentA && !aPrev) {
+            alignRunning = !alignRunning;
+            filteredTx = 0;
+            lastAlignPower = 0;
+            orientareGata = false;
+        }
+
+        aPrev = currentA;
+
         if (alignRunning) {
             orientare();
-
-            if (orientaregata) {
-                alignRunning = false; // stop
-            }
-            return;
         }
-        if(alignRunning)
-            telemetry.addLine("alligning...");
-        else telemetry.clear();
-        telemetry.update();
+
 
         double dist = calculateDistTun();
-        telemetry.addData("procentaj qr: ",dist);
+        telemetry.addData("distance*: ",dist);
+        if(alignRunning) telemetry.addLine("orientare ON");
+        else telemetry.addLine("orientare OFF");
         telemetry.update();
 
 
@@ -384,11 +381,9 @@ public class TeleOpNou2 extends LinearOpMode {
         if (toggle_tun) {
             tun1.setPower(vit);
             tun2.setPower(vit);
-            limelight.start();
         } else {
             tun1.setPower(0);
             tun2.setPower(0);
-            limelight.stop();
         }
     }
 
@@ -758,38 +753,89 @@ public class TeleOpNou2 extends LinearOpMode {
     boolean orientaregata=false;
     boolean alignRunning = false;
     boolean aPrev = false;
+    double filteredTx = 0;
+    double lastAlignPower = 0;
+    boolean orientareGata = false;
+    double lastSeenDirection=0;
+    double searchPower = 0.0025;
+
+
     public void orientare() {
         LLResult result = limelight.getLatestResult();
 
-        if (result != null && result.isValid()) {
-            double tx = result.getTx();
-
-            double kP = 0.01;
-            double power = Range.clip(kP * tx, -0.25, 0.25);
-
-            stft.setPower(power);
-            drft.setPower(-power);
-            stspa.setPower(power);
-            drspa.setPower(-power);
-
-            // aliniat?
-            if (Math.abs(tx) <= 1) {
-                stft.setPower(0);
-                drft.setPower(0);
-                stspa.setPower(0);
-                drspa.setPower(0);
-                orientaregata = true;
+        if (result == null || !result.isValid()) {
+            if (Math.abs(lastAlignPower) < 0.001) {
+                // Dacă nu mai avea putere, oprește
+                stopDrive();
+                lastAlignPower = 0;
+                return;
             } else {
-                orientaregata = false;
+                // merge pe directia in functie de ultimu tx vazut
+                double power = -Math.signum(lastSeenDirection) * searchPower;
+                stft.setPower(power);
+                drft.setPower(-power);
+                stspa.setPower(power);
+                drspa.setPower(-power);
             }
-
-        } else {
-            // nu vede target
-            stft.setPower(0);
-            drft.setPower(0);
-            stspa.setPower(0);
-            drspa.setPower(0);
-            orientaregata = false;
+            return;
         }
+
+
+        double rawTx = result.getTx();
+        filteredTx = 0.9 * filteredTx + 0.1 * rawTx;
+        if(filteredTx>0)
+            lastSeenDirection = 1;
+        else
+            lastSeenDirection = -1;
+
+        // ===== PARAMETRI FINI =====
+        double kP = 0.0022;
+        double maxPower = 0.03;
+        double deadband = 1.2 ;
+        double ALIGN_SPEED = 0.60 ;
+
+        double absTx = Math.abs(filteredTx);
+
+        if (absTx < deadband) {
+            stopDrive();
+            lastAlignPower = 0;
+            orientareGata = true;
+            return;
+        }
+
+        double scale;
+        if (absTx > 6) scale = 1.0;
+        else if (absTx > 2) scale = 0.5;
+        else scale = 0.25;
+
+        double desiredPower = kP * filteredTx * scale;
+        desiredPower = Range.clip(desiredPower, -maxPower, maxPower);
+
+        // LIMITARE ACCELERAȚIE (CRITIC)
+        double maxDelta = 0.0015;
+        double power = Range.clip(
+                desiredPower,
+                lastAlignPower - maxDelta,
+                lastAlignPower + maxDelta
+        );
+
+        power *= ALIGN_SPEED;
+        lastAlignPower = power;
+
+        stft.setPower(power);
+        drft.setPower(-power);
+        stspa.setPower(power);
+        drspa.setPower(-power);
     }
+
+
+    private void stopDrive() {
+        stft.setPower(0);
+        drft.setPower(0);
+        stspa.setPower(0);
+        drspa.setPower(0);
+    }
+
+
+
 }
