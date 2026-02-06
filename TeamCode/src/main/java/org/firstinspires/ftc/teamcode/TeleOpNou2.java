@@ -221,16 +221,9 @@ public class TeleOpNou2 extends LinearOpMode {
              ty = result.getTy(); // How far up or down the target is (degrees)
              ta = result.getTa(); // How big the target looks (0%-100% of the image)
 
-            dist_tun = Math.sqrt(75*75 + tx*tx + ty*ty) + 10;
+        } else {}
 
-            //telemetry.addData("Target X", tx);
-            //telemetry.addData("Target Y", ty);
-            //telemetry.addData("Target Area", ta);
-        } else {
-            //telemetry.addData("Limelight", "No Targets");
-        }
-
-        return ta; // daca dist_tun e 0 atunci nu vede cosul
+        return (ta-3.75)/(-0.015);
     }
 
     public double calcVitezaTun () {
@@ -371,8 +364,8 @@ public class TeleOpNou2 extends LinearOpMode {
         else telemetry.clear();
         telemetry.update();
 
-        double ta = calculateDistTun();
-        telemetry.addData("procentaj qr: ",ta);
+        double dist = calculateDistTun();
+        telemetry.addData("procentaj qr: ",dist);
         telemetry.update();
 
 
