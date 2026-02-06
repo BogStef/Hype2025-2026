@@ -43,7 +43,7 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import java.util.List;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@TeleOp(name="Test")
+@TeleOp(name="Te")
 public class Test extends LinearOpMode {
 
     public Servo rev;
@@ -55,6 +55,8 @@ public class Test extends LinearOpMode {
     public final double revpos2=0.58;
     public final double revpos3 = 0.96;
 
+    public DcMotor motor;
+
 
 
 
@@ -62,24 +64,6 @@ public class Test extends LinearOpMode {
     @Override
     public void runOpMode() {
         initialize();
-
-        waitForStart();
-        while (opModeIsActive()) {
-            if(gamepad1.dpad_right){
-                rev_right();
-            }
-            else if(gamepad1.dpad_left){
-                rev_left();
-            }
-
-            if(gamepad2.right_bumper)
-                push_tun.setPosition(0.28);
-            if(gamepad2.left_bumper)
-                push_tun.setPosition(0.50);
-
-        }
-
-
     }
     public void initialize(){
         rev = hardwareMap.get(Servo.class, "rev");
@@ -87,30 +71,10 @@ public class Test extends LinearOpMode {
         telemetry.addLine("init");
         telemetry.update();
         toggle_tun=false;
-    }
-    public void rev_left(){
-        if(rev.getPosition()==revpos1)
-            rev.setPosition(revpos2);
-        else if(rev.getPosition()==revpos2)
-            rev.setPosition(revpos3);
-        else if(rev.getPosition()==revpos3)
-            rev.setPosition(revpos1);
-        else
-            rev.setPosition(revpos1);
-
+        motor = hardwareMap.get(DcMotor.class, "motor");
+        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor.setPower(1.0);
 
     }
-
-    public void rev_right(){
-        if(rev.getPosition()==revpos1)
-            rev.setPosition(revpos3);
-        else if(rev.getPosition()==revpos2)
-            rev.setPosition(revpos1);
-        else if(rev.getPosition()==revpos3)
-            rev.setPosition(revpos2);
-        else
-            rev.setPosition(revpos1);
-    }
-
 
 }

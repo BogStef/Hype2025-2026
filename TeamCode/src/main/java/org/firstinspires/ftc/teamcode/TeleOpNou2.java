@@ -67,7 +67,7 @@ public class TeleOpNou2 extends LinearOpMode {
     public DcMotor intake_down;
 
     public Servo push_tun;
-    public Servo rev;
+    public CRServo rev;
 
     public CRServo improvizatie_intake;
 
@@ -82,6 +82,10 @@ public class TeleOpNou2 extends LinearOpMode {
     public float distanta_proxsensorCM=16;//real = 13.3
 
     public int[] neededOrder = {0,0,0};//0 - purple, 1 - green
+    public DcMotor encoder;
+    public int encoder_ticks;
+    public double encoder_truepos;
+    public int encoder_ticks_needed;
 
     int shootState=0;
 
@@ -174,7 +178,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
         push_tun = hardwareMap.get(Servo.class,"push_tun");
-        rev = hardwareMap.get(Servo.class,"rev");
+        rev = hardwareMap.crservo.get("rev");
         improvizatie_intake = hardwareMap.get(CRServo.class,"improvizatie_intake");
 
         pass_intake = false;///pass intake
@@ -187,8 +191,8 @@ public class TeleOpNou2 extends LinearOpMode {
 
         rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
 
+        //encoder = hardwareMap.dcMotor.get("ThroughBoreEncoder");
     }
-
     boolean pressedl = false;
     boolean starerun = true;
     boolean pressedb = false;
@@ -207,9 +211,48 @@ public class TeleOpNou2 extends LinearOpMode {
     boolean lastrighttrigger=false;
 
     //PID
+    public double calculateDistTun() {
+        double dist_tun =0.00;
 
-    public void run() {
+        LLResult result = limelight.getLatestResult();
+        if (result != null && result.isValid()) {
+            double tx = result.getTx(); // How far left or right the target is (degrees)
+            double ty = result.getTy(); // How far up or down the target is (degrees)
+            double ta = result.getTa(); // How big the target looks (0%-100% of the image)
+
+            dist_tun = Math.sqrt(75*75 + tx*tx + ty*ty) + 10;
+
+            //telemetry.addData("Target X", tx);
+            //telemetry.addData("Target Y", ty);
+            //telemetry.addData("Target Area", ta);
+        } else {
+            //telemetry.addData("Limelight", "No Targets");
+        }
+        if (result != null && result.isValid()) {
+            Pose3D botpose = result.getBotpose();
+            if (botpose != null) {
+                double x = botpose.getPosition().x;
+                double y = botpose.getPosition().y;
+                //telemetry.addData("MT1 Location", "(" + x + ", " + y + ")");
+            }
+        }
+
+        return dist_tun; // daca dist_tun e 0 atunci nu vede cosul
+    }
+
+    public double calcVitezaTun () {
+        double vitTun=0;
+        double cosB, Q=10, frec=1;
+        double DT = calculateDistTun();
+        cosB = Math.sqrt(1-(75/DT)*(75/DT));
+        vitTun = Math.sqrt((9.8*(DT*cosB+Q)*frec)/(0.61*0.78));
+        return vitTun;
+    }
+    public void run() {///TODO clean this up
         telemetry.update();
+
+
+
         boolean isTriggerPressed = gamepad1.cross;
         boolean isTriggerPressedb = gamepad1.circle;
         if (isTriggerPressedb && !pressedb) {
@@ -218,6 +261,12 @@ public class TeleOpNou2 extends LinearOpMode {
 
         if (isTriggerPressed && !pressedl) {
             resunghi = -unghi() + 180;
+        }
+
+        if(gamepad1.dpad_left){
+            revLeft();
+        } else if(gamepad1.dpad_right){
+            revRight();
         }
 
         pressedl = isTriggerPressed;
@@ -274,11 +323,9 @@ public class TeleOpNou2 extends LinearOpMode {
         drspa.setPower(drspapwr*maxspeed);
         ////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////
-        limelight.stop();
 
 
       if (motif_code == -1)  motif_code = motif(); //cauta motif
-      else limelight.stop();
 
 
       /// OVVERIDE LA SHOOT
@@ -289,6 +336,7 @@ public class TeleOpNou2 extends LinearOpMode {
         lastrighttrigger=currentrighttrigger;
         if(shooting){
             shoot();
+            tun(1);
             if(functionshootstate == 2){
                 shooting = false;
                 functionshootstate = 0;
@@ -310,11 +358,11 @@ public class TeleOpNou2 extends LinearOpMode {
 
         /// ORIENTARE
         // apasa driver1 oe a
-        if (gamepad1.a && !aPrev) {
+        if (gamepad1.square && !aPrev) {
             alignRunning = true;
             orientaregata = false;
         }
-        aPrev = gamepad1.a;
+        aPrev = gamepad1.square;
 
         // ruleaza alinierea
         if (alignRunning) {
@@ -323,7 +371,19 @@ public class TeleOpNou2 extends LinearOpMode {
             if (orientaregata) {
                 alignRunning = false; // stop
             }
+            return;
         }
+        if(alignRunning)
+            telemetry.addLine("alligning...");
+        else telemetry.clear();
+        telemetry.update();
+
+        double distance_tun = calculateDistTun();
+        telemetry.addData("distance cos: ",distance_tun);//afiseaza distanta pana la tuin
+        telemetry.update();
+
+
+        stop_revolver();
     }
 
     boolean lastSquare = false;
@@ -338,9 +398,11 @@ public class TeleOpNou2 extends LinearOpMode {
         if (toggle_tun) {
             tun1.setPower(vit);
             tun2.setPower(vit);
+            limelight.start();
         } else {
             tun1.setPower(0);
             tun2.setPower(0);
+            limelight.stop();
         }
     }
 
@@ -368,7 +430,7 @@ public class TeleOpNou2 extends LinearOpMode {
             if (pass_intake) {
                 intake_down.setPower(vit);
             } else {
-                intake_down.setPower(-1*vit);
+                intake_down.setPower(-1 * vit);
                 intake_up.setPower(-vit);
             }
             improvizatie_intake.setPower(0);
@@ -443,7 +505,57 @@ public class TeleOpNou2 extends LinearOpMode {
         drspa.setVelocity(2897 * -vmax * rot);
         stspa.setVelocity(2897 * vmax * rot);
     }
-    public void revRight() {
+
+    public void get_encoder_truepos(){
+        encoder_ticks = encoder.getCurrentPosition();
+        encoder_truepos = encoder_ticks/8192.0 - Math.floor(encoder_ticks/8192.0);
+    }
+
+    public void stop_revolver(){
+        if(rev.getPower() == 1.0)
+            if(encoder_ticks > encoder_ticks_needed)
+                rev.setPower(0.0);
+        else if(rev.getPower() == -1.0)
+            if(encoder_ticks < encoder_ticks_needed)
+                rev.setPower(0.0);
+    }
+    ///TODO make continuous rotation && find pos with through bore encoder
+    public void revRight(){
+        get_encoder_truepos();
+        double error = 0.01;
+        if (Math.abs(encoder_truepos - revpos1) < error) {
+            rev.setPower(1.0);
+            encoder_ticks_needed = ((int)revpos3)*8192;
+        } else if (Math.abs(encoder_truepos - revpos2) < error) {
+            rev.setPower(1.0);
+            encoder_ticks_needed = ((int)revpos1)*8192;
+        } else if (Math.abs(encoder_truepos - revpos3) < error) {
+            rev.setPower(1.0);
+            encoder_ticks_needed = ((int)revpos2)*8192;
+        } else {
+            rev.setPower(1.0);
+            encoder_ticks_needed = ((int)revpos1)*8192;;//might not be very good
+        }
+    }
+
+    public void revLeft(){
+        double error = 0.01;
+
+        if (Math.abs(encoder_truepos - revpos1) < error) {
+            rev.setPower(-1.0);
+            encoder_ticks_needed = ((int)revpos2)*8192;
+        } else if (Math.abs(encoder_truepos - revpos2) < error) {
+            rev.setPower(-1.0);
+            encoder_ticks_needed = ((int)revpos3)*8192;
+        } else if (Math.abs(encoder_truepos - revpos3) < error) {
+            rev.setPower(-1.0);
+            encoder_ticks_needed = ((int)revpos1)*8192;
+        } else {
+            rev.setPower(-1.0);
+            encoder_ticks_needed = ((int)revpos1)*8192;
+        }
+    }
+    /*public void old_revRight() {
         double pos = rev.getPosition();
         double error = 0.01;
 
@@ -458,7 +570,7 @@ public class TeleOpNou2 extends LinearOpMode {
         }
     }
 
-    public void revLeft() {
+    public void old_revLeft() {
         double pos = rev.getPosition();
         double error = 0.01;
 
@@ -472,7 +584,7 @@ public class TeleOpNou2 extends LinearOpMode {
             rev.setPosition(revpos1);
         }
     }
-
+*/
 
     public int functionshootstate=0;
 

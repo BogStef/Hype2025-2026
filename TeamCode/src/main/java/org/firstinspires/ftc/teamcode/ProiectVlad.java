@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-@Autonomous(name="ProiectVlad_Power")
+@Autonomous(name="test")
 public class ProiectVlad extends OpMode {
     private DcMotor motor;
     private DcMotor motor2;
