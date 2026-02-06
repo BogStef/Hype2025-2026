@@ -29,7 +29,7 @@ public class Constants {
                     .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD);
     public static OTOSConstants localizerConstants = new OTOSConstants()
             .hardwareMapName("otos")
-            .offset(new SparkFunOTOS.Pose2D(27.164,110.206,Math.PI/2))
+            .offset(new SparkFunOTOS.Pose2D(27.164,110.206,Math.PI/2)) //todo test offset
             .linearUnit(DistanceUnit.INCH)
             .angleUnit(AngleUnit.RADIANS)
             .linearScalar(-0.985)/// LASA PE -0.985 (minimu,n  nl pe care il aveam era 0.97 si max era sub 1
