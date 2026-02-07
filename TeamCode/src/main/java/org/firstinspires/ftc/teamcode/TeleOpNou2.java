@@ -758,6 +758,7 @@ public class TeleOpNou2 extends LinearOpMode {
     boolean orientareGata = false;
     double lastSeenDirection=0;
     double searchPower = 0.0025;
+    static final int TARGET_ORIENTARE=1;
 
 
     public void orientare() {
@@ -765,7 +766,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
         if (result == null || !result.isValid()) {
             if (Math.abs(lastAlignPower) < 0.001) {
-                // Dacă nu mai avea putere, oprește
+
                 stopDrive();
                 lastAlignPower = 0;
                 return;
@@ -783,14 +784,12 @@ public class TeleOpNou2 extends LinearOpMode {
 
         double rawTx = result.getTx();
         filteredTx = 0.9 * filteredTx + 0.1 * rawTx;
-        if(filteredTx>0)
-            lastSeenDirection = 1;
-        else
-            lastSeenDirection = -1;
-
+        if(Math.abs(filteredTx)>0.2)
+            lastSeenDirection = filteredTx;
         // ===== PARAMETRI FINI =====
+
         double kP = 0.0022;
-        double maxPower = 0.03;
+        double maxPower = 0.05;
         double deadband = 1.2 ;
         double ALIGN_SPEED = 0.60 ;
 
@@ -803,15 +802,19 @@ public class TeleOpNou2 extends LinearOpMode {
             return;
         }
 
-        double scale;
-        if (absTx > 6) scale = 1.0;
-        else if (absTx > 2) scale = 0.5;
-        else scale = 0.25;
+        double scale;//setam viteza de rotatie in functie de unghi
+        //daca unghiu e mare(adica e rau) atunci ne miscam repede
+        //daca unghiu e mic (adica aproape perfect) atunci ne miscam inet
+    //        if (absTx > 6) scale = 1.0;
+    //        else if (absTx > 2) scale = 0.5;
+    //        else scale = 0.25;
+        scale = 1/30 * (absTx*absTx) + 0.05; /// scale(absTx) = 1/30 * absTx^2+0.05 (functie)
+        if(scale>1) scale=1;
 
         double desiredPower = kP * filteredTx * scale;
         desiredPower = Range.clip(desiredPower, -maxPower, maxPower);
 
-        // LIMITARE ACCELERAȚIE (CRITIC)
+        // LIMITARE ACCELERAȚIE
         double maxDelta = 0.0015;
         double power = Range.clip(
                 desiredPower,
