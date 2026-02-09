@@ -156,7 +156,7 @@ public class TeleOpNou2 extends LinearOpMode {
         tun1.setDirection(DcMotor.Direction.REVERSE);
 
         intake_up = hardwareMap.get(DcMotor.class, "intake_up");///intake
-        intake_down = hardwareMap.get(DcMotor.class, "intake_down");
+        //intake_down = hardwareMap.get(DcMotor.class, "intake_down");
         intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intake_up.setDirection(DcMotor.Direction.REVERSE);
@@ -191,7 +191,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
         rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
 
-        //encoder = hardwareMap.dcMotor.get("ThroughBoreEncoder");
+        encoder = hardwareMap.dcMotor.get("ThroughBoreEncoder");
     }
     boolean pressedl = false;
     boolean starerun = true;
@@ -703,8 +703,8 @@ public class TeleOpNou2 extends LinearOpMode {
     public void storage_basic(){
         if(!storage_basic_running) return;
 
-        int revtime=90;
-        int shoottime=50;
+        int revtime = 90;
+        int shoottime = 50;
         switch (basic_state){
             case 0://shoot
                 shooting=true;

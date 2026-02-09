@@ -45,7 +45,6 @@ public class AutonomyDreapta extends OpMode {
         panelsTelemetry.debug("Heading", follower.getPose().getHeading());
         panelsTelemetry.update(telemetry);
 
-        follower.setStartingPose(new Pose(88.000, 9.000, Math.toRadians(90)));
 
 
     }
@@ -58,30 +57,23 @@ public class AutonomyDreapta extends OpMode {
         public PathChain Path5;
         public PathChain Path6;
         public PathChain Path7;
-        public PathChain Path8;
-        public PathChain Path9;
-        public PathChain Path10;
-        public PathChain Path11;
-        public PathChain Path12;
-        public PathChain Path13;
-        public PathChain Path14;
 
         public Paths(Follower follower) {
             Path1 = follower.pathBuilder().addPath(
                             new BezierLine(
                                     new Pose(88.000, 9.000),
 
-                                    new Pose(88.000, 87.500)
+                                    new Pose(88.000, 87.000)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(225))
 
                     .build();
 
             Path2 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(88.000, 87.500),
-
-                                    new Pose(102.000, 83.500)
+                            new BezierCurve(
+                                    new Pose(88.000, 87.000),
+                                    new Pose(83.170, 51.250),
+                                    new Pose(104.000, 35.500)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(225), Math.toRadians(0))
 
@@ -89,29 +81,29 @@ public class AutonomyDreapta extends OpMode {
 
             Path3 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(102.000, 83.500),
+                                    new Pose(104.000, 35.500),
 
-                                    new Pose(124.000, 83.500)
+                                    new Pose(125.750, 35.500)
                             )
-                    ).setTangentHeadingInterpolation()
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
 
                     .build();
 
             Path4 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(124.000, 83.500),
-
-                                    new Pose(88.000, 87.500)
+                            new BezierCurve(
+                                    new Pose(125.750, 35.500),
+                                    new Pose(80.200, 45.700),
+                                    new Pose(88, 87.000)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(225))
 
                     .build();
 
             Path5 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(88.000, 87.500),
-
-                                    new Pose(102.000, 59.500)
+                            new BezierCurve(
+                                    new Pose(88.000, 87.000),
+                                    new Pose(72.000, 30.000),
+                                    new Pose(130.500, 8.450)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(225), Math.toRadians(0))
 
@@ -119,89 +111,19 @@ public class AutonomyDreapta extends OpMode {
 
             Path6 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(102.000, 59.500),
+                                    new Pose(130.500, 8.450),
 
-                                    new Pose(124.000, 59.500)
+                                    new Pose(135.75, 8.450)
                             )
                     ).setTangentHeadingInterpolation()
 
                     .build();
 
             Path7 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(124.000, 59.500),
-
-                                    new Pose(88.000, 87.500)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(225))
-
-                    .build();
-
-            Path8 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(88.000, 87.500),
-
-                                    new Pose(102.000, 35.500)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(225), Math.toRadians(0))
-
-                    .build();
-
-            Path9 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(102.000, 35.500),
-
-                                    new Pose(124.000, 35.500)
-                            )
-                    ).setTangentHeadingInterpolation()
-
-                    .build();
-
-            Path10 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(124.000, 35.500),
-
-                                    new Pose(88.000, 87.500)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(225))
-
-                    .build();
-
-            Path11 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(88.000, 87.500),
-
-                                    new Pose(124.000, 10.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(225), Math.toRadians(0))
-
-                    .build();
-
-            Path12 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(124.000, 10.000),
-
-                                    new Pose(133.500, 10.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
-
-                    .build();
-
-            Path13 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(133.500, 10.000),
-
-                                    new Pose(124.500, 25.000)
-                            )
-                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
-
-                    .build();
-
-            Path14 = follower.pathBuilder().addPath(
-                            new BezierLine(
-                                    new Pose(124.500, 25.000),
-
-                                    new Pose(88.000, 87.500)
+                            new BezierCurve(
+                                    new Pose(135.75, 8.450),
+                                    new Pose(92.500, 42.000),
+                                    new Pose(88.000, 87.000)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(225))
 
@@ -269,62 +191,9 @@ public class AutonomyDreapta extends OpMode {
             case 16://shoot
                 pathState++;
                 break;
-            case 17:
-                if (!follower.isBusy()) pathState++;
-                break;
-            case 18:
-                follower.followPath(paths.Path8);
-                pathState++;
-                break;
-            case 19:
-                if (!follower.isBusy()) pathState++;
-                break;
-            case 20:
-                follower.followPath(paths.Path9);
-                pathState++;
-                break;
-            case 21:
-                if (!follower.isBusy()) pathState++;
-                break;
-            case 22:
-                follower.followPath(paths.Path10);
-                pathState++;
-                break;
-            case 23://shoot
-                pathState++;
-                break;
-            case 24:
-                if (!follower.isBusy()) pathState++;
-                break;
-            case 25:
-                follower.followPath(paths.Path11);
-                pathState++;
-                break;
-            case 26:
-                if (!follower.isBusy()) pathState++;
-                break;
-            case 27:
-                follower.followPath(paths.Path12);
-                pathState++;
-                break;
-            case 28:
-                if (!follower.isBusy()) pathState++;
-                break;
-            case 29:
-                follower.followPath(paths.Path13);
-                pathState++;
-                break;
-            case 30:
-                if (!follower.isBusy()) pathState++;
-                break;
-            case 31:
-                follower.followPath(paths.Path14);
-                pathState++;
-                break;
-            case 32://shoot
-                pathState++;
-                break;
+
         }
-        return pathState;
+        return 0;
+
     }
 }
