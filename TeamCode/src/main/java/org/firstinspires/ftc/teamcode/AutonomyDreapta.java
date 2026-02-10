@@ -12,7 +12,7 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.geometry.Pose;
 
-@Autonomous(name = "AUTO BA", group = "Autonomous")
+@Autonomous(name = "AUTO RED FAR", group = "Autonomous")
 @Configurable // Panels
 public class AutonomyDreapta extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance

@@ -14,7 +14,7 @@ import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name = "AUTO BA", group = "Autonomous")
+@Autonomous(name = "AUTO RED CLOSE", group = "Autonomous")
 @Configurable // Panels
 public class autonomyDreaptaRedClose extends OpMode{
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
