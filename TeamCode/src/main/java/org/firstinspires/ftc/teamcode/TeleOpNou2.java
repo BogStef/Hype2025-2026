@@ -162,12 +162,12 @@ public class TeleOpNou2 extends LinearOpMode {
         intake_up.setDirection(DcMotor.Direction.REVERSE);
         intake_down.setDirection(DcMotor.Direction.REVERSE);
 
-        imu = hardwareMap.get(IMU.class, "imu");///gyro
+        imu = hardwareMap.get(IMU.class, "imu_expansion");///gyro
         imu.initialize(
-                new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.FORWARD, RevHubOrientationOnRobot.UsbFacingDirection.UP))
+                new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.LEFT, RevHubOrientationOnRobot.UsbFacingDirection.DOWN))
 
         );
-        imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.LEFT, RevHubOrientationOnRobot.UsbFacingDirection.FORWARD)));
+
         limelight = hardwareMap.get(Limelight3A.class, "Ethernet Device");///camera
         limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
         limelight.start(); // This tells Limelight to start looking!
@@ -212,18 +212,16 @@ public class TeleOpNou2 extends LinearOpMode {
 
     //PID
     public double calculateDistTun() {
-        double dist_tun =0.00;
-        double tx,ty,ta = 0.00;
+        double ta = 0.00;
+        double scale=13674.56;
 
         LLResult result = limelight.getLatestResult();
         if (result != null && result.isValid()) {
-            tx = result.getTx(); // How far left or right the target is (degrees)
-             ty = result.getTy(); // How far up or down the target is (degrees)
-             ta = result.getTa(); // How big the target looks (0%-100% of the image)
-
-        } else {}
-
-        return (ta-3.75)/(-0.015);
+             ta = result.getTa(); // 1 hypemetru = 0.009 mm
+        }
+        if(ta!=0)
+         return scale/ta;
+        else return 0;
     }
 
     public double calcVitezaTun () {
@@ -234,45 +232,47 @@ public class TeleOpNou2 extends LinearOpMode {
         vitTun = Math.sqrt((9.8*(DT*cosB+Q)*frec)/(0.61*0.78));
         return vitTun;
     }
+
+    double speed,turn,strafe;
     public void run() {///TODO clean this up
         telemetry.update();
 
 
 
-        boolean isTriggerPressed = gamepad1.cross;
         boolean isTriggerPressedb = gamepad1.circle;
-        if (isTriggerPressedb && !pressedb) {
+        if (isTriggerPressedb && !pressedb) { //circle
             starerun = !starerun;
         }
-
-        if (isTriggerPressed && !pressedl) {
-            resunghi = -unghi() + 180;
-        }
-
-        if(gamepad1.dpad_left){
-            revLeft();
-        } else if(gamepad1.dpad_right){
-            revRight();
-        }
-
-        pressedl = isTriggerPressed;
         pressedb = isTriggerPressedb;
 
         double stftpwr;
         double stspapwr;
         double drftpwr;
         double drspapwr;
-
-
-            double speed;
             if (gamepad2.right_trigger == 1) {
                 speed = -gamepad1.left_stick_y - gamepad2.right_stick_y / 3;
             } else {
                 speed = -gamepad1.left_stick_y;
             }
 
-            final double turn = gamepad1.right_stick_x;
-            final double strafe = gamepad1.left_stick_x;
+            turn = gamepad1.right_stick_x;
+            if(disable_driver_turn) turn =0;
+
+
+            strafe = gamepad1.left_stick_x;
+
+        telemetry.addData("raw unghi",imu.getRobotYawPitchRollAngles());
+
+        double heading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+
+
+        if(starerun){
+            double tempStrafe = strafe * Math.cos(-heading) - speed * Math.sin(-heading);
+            double tempSpeed = strafe * Math.sin(-heading) + speed * Math.cos(-heading);
+            speed=tempSpeed;
+            strafe = tempStrafe;
+        }
+
 
             stftpwr = speed + turn + strafe;
             drftpwr = speed - turn - strafe;
@@ -302,11 +302,12 @@ public class TeleOpNou2 extends LinearOpMode {
             drspapwr /= max;
         }
 
-        double maxspeed=0.7;
-        stft.setPower(stftpwr*maxspeed);
-        drft.setPower(drftpwr*maxspeed);
-        stspa.setPower(stspapwr*maxspeed);
-        drspa.setPower(drspapwr*maxspeed);
+        double maxspeed=0.25;
+            stft.setPower(stftpwr*maxspeed);
+            drft.setPower(drftpwr*maxspeed);
+            stspa.setPower(stspapwr*maxspeed);
+            drspa.setPower(drspapwr*maxspeed);
+
         ////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////
 
@@ -344,28 +345,31 @@ public class TeleOpNou2 extends LinearOpMode {
 
         /// ORIENTARE
         // apasa driver1 oe a
-        if (gamepad1.square && !aPrev) {
-            alignRunning = true;
-            orientaregata = false;
-        }
-        aPrev = gamepad1.square;
+        boolean currentA = gamepad1.square;
 
-        // ruleaza alinierea
+        if (currentA && !aPrev) {
+            alignRunning = !alignRunning;
+            filteredTx = 0;
+            lastAlignPower = 0;
+            lastSeenDirection = 0;
+            orientareGata = false;
+        }
+
+        aPrev = currentA;
+
         if (alignRunning) {
             orientare();
-
-            if (orientaregata) {
-                alignRunning = false; // stop
-            }
-            return;
         }
-        if(alignRunning)
-            telemetry.addLine("alligning...");
-        else telemetry.clear();
-        telemetry.update();
+        else{
+            disable_driver_turn=false;
+        }
+        ////////////////
+
 
         double dist = calculateDistTun();
-        telemetry.addData("procentaj qr: ",dist);
+        telemetry.addData("distance*: ",dist);
+        if(alignRunning) telemetry.addLine("orientare ON");
+        else telemetry.addLine("orientare OFF");
         telemetry.update();
 
 
@@ -384,11 +388,9 @@ public class TeleOpNou2 extends LinearOpMode {
         if (toggle_tun) {
             tun1.setPower(vit);
             tun2.setPower(vit);
-            limelight.start();
         } else {
             tun1.setPower(0);
             tun2.setPower(0);
-            limelight.stop();
         }
     }
 
@@ -474,14 +476,7 @@ public class TeleOpNou2 extends LinearOpMode {
     int caterun = 0;
 
     ///nico stie
-    public double unghi() {
 
-
-        double unghi = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
-        //telemetry.addData(" ", unghi);
-        //telemetry.update();
-        return unghi + 180;
-    }
 
     public void rotation() {
         final double rot = gamepad1.right_stick_x;
@@ -754,42 +749,90 @@ public class TeleOpNou2 extends LinearOpMode {
             case 5: storage_basic_running = false;///stop
                 break;
         }
-    }
-    boolean orientaregata=false;
+    };
     boolean alignRunning = false;
     boolean aPrev = false;
+    double filteredTx = 0;
+    double lastAlignPower = 0;
+    boolean orientareGata = false;
+    double lastSeenDirection=1;
+    double searchPower = 0.003;
+    boolean search =false;
+    boolean disable_driver_turn=false;
+    ElapsedTime searchTimer = new ElapsedTime();
+
     public void orientare() {
         LLResult result = limelight.getLatestResult();
+        if (result == null || !result.isValid()) {
+                disable_driver_turn=false;
+            return;
+        }
+        search = false;
+        disable_driver_turn=true;
 
-        if (result != null && result.isValid()) {
-            double tx = result.getTx();
+        double rawTx = result.getTx();
+        filteredTx = 0.9 * filteredTx + 0.1 * rawTx;
+        if(Math.abs(filteredTx)>1)
+            lastSeenDirection = filteredTx;
+        // ===== PARAMETRI FINI =====
 
-            double kP = 0.01;
-            double power = Range.clip(kP * tx, -0.25, 0.25);
+        double kP = 0.0022;
+        double maxPower = 0.1;
+        double deadband = 3 ;
+        double ALIGN_SPEED = 0.8 ;
 
+        double absTx = Math.abs(filteredTx);
+
+        if (absTx < deadband) {
+            stopDrive();
+            lastAlignPower = 0;
+            orientareGata = true;
+            return;
+        }
+
+        double scale;//setam viteza de rotatie in functie de unghi
+        //daca unghiu e mare(adica e rau) atunci ne miscam repede
+        //daca unghiu e mic (adica aproape perfect) atunci ne miscam inet
+        //        if (absTx > 6) scale = 1.0;
+        //        else if (absTx > 2) scale = 0.5;
+        //        else scale = 0.25;
+        scale = 1/27 * (absTx*absTx) + 0.15; /// scale(absTx) = 1/30 * absTx^2+0.05 (functie)
+        if(scale>1) scale=1;
+
+        double desiredPower = kP * filteredTx * scale;
+        desiredPower = Range.clip(desiredPower, -maxPower, maxPower);
+
+        // LIMITARE ACCELERAȚIE
+        double maxDelta = 0.0015;
+        double power = Range.clip(
+                desiredPower,
+                lastAlignPower - maxDelta,
+                lastAlignPower + maxDelta
+        );
+
+        power *= ALIGN_SPEED;
+        lastAlignPower = power;
+        if(Math.abs(speed)<0.05&&Math.abs(strafe)<0.05&&Math.abs(turn)<0.5){
             stft.setPower(power);
             drft.setPower(-power);
             stspa.setPower(power);
             drspa.setPower(-power);
-
-            // aliniat?
-            if (Math.abs(tx) <= 1) {
-                stft.setPower(0);
-                drft.setPower(0);
-                stspa.setPower(0);
-                drspa.setPower(0);
-                orientaregata = true;
-            } else {
-                orientaregata = false;
-            }
-
-        } else {
-            // nu vede target
-            stft.setPower(0);
-            drft.setPower(0);
-            stspa.setPower(0);
-            drspa.setPower(0);
-            orientaregata = false;
         }
+
+
     }
+
+
+
+
+    private void stopDrive() {
+        stft.setPower(0);
+        drft.setPower(0);
+        stspa.setPower(0);
+        drspa.setPower(0);
+    }
+
+
+
+
 }
