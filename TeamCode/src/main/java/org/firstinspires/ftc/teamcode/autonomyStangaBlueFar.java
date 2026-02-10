@@ -21,7 +21,7 @@ public class autonomyStangaBlueFar extends OpMode {
     public Follower follower; // Pedro Pathing follower instance
     private int pathState; // Current autonomous path state (state machine)
     private org.firstinspires.ftc.teamcode.AutonomyDreapta.Paths paths; // Paths defined in the Paths class
-    boolean done = false;
+    boolean done = false; //
     ElapsedTime shootTimer = new ElapsedTime();
 
     @Override

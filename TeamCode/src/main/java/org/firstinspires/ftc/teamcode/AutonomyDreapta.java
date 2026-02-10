@@ -19,7 +19,7 @@ public class AutonomyDreapta extends OpMode {
     public Follower follower; // Pedro Pathing follower instance
     private int pathState; // Current autonomous path state (state machine)
     private Paths paths; // Paths defined in the Paths class
-    boolean done = false;
+    boolean done = false; //
 
     @Override
     public void init() {
