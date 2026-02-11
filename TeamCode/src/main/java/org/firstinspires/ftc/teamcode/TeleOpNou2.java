@@ -155,11 +155,11 @@ public class TeleOpNou2 extends LinearOpMode {
         tun2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         tun1.setDirection(DcMotor.Direction.REVERSE);
 
-        intake_up = hardwareMap.get(DcMotor.class, "intake_up");///intake
-        //intake_down = hardwareMap.get(DcMotor.class, "intake_down");
-        intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        intake_up.setDirection(DcMotor.Direction.REVERSE);
+        //intake_up = hardwareMap.get(DcMotor.class, "intake_up");///intake
+        intake_down = hardwareMap.get(DcMotor.class, "intake_down");
+        //intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        //intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        //intake_up.setDirection(DcMotor.Direction.REVERSE);
         intake_down.setDirection(DcMotor.Direction.REVERSE);
 
         imu = hardwareMap.get(IMU.class, "imu_expansion");///gyro
@@ -210,30 +210,39 @@ public class TeleOpNou2 extends LinearOpMode {
     boolean shooting = false;
     boolean lastrighttrigger=false;
 
+    boolean lastDown;
+    double trueTa = 0.00;
+
     //PID
-    public double calculateDistTun() {
+    public void calculateDistTun() {
         double ta = 0.00;
-        double scale=13674.56;
 
         LLResult result = limelight.getLatestResult();
         if (result != null && result.isValid()) {
-             ta = result.getTa(); // 1 hypemetru = 0.009 mm
+             ta = result.getTa();
         }
         if(ta!=0)
-         return scale/ta;
-        else return 0;
+          trueTa = ta; // ne folosim numai de ta pt ca la zalau vom trage numa de pe linie ca urmare unghiul nu ne fut
     }
 
-    public double calcVitezaTun () {
+/*
+* nu merge pt ca DT inca e in hypemetrii si h e in cm la fel si q
+* public double calcVitezaTun () {
         double vitTun=0;
-        double cosB, Q=10, frec=1;
+        double cosB, sinB, Q=1, marginOfError = 1;
         double DT = calculateDistTun();
         cosB = Math.sqrt(1-(75/DT)*(75/DT));
-        vitTun = Math.sqrt((9.8*(DT*cosB+Q)*frec)/(0.61*0.78));
+        sinB = 1 - (cosB*cosB);
+        vitTun = Math.sqrt(9.81 * (DT*cosB+Q) /sinB /sinB /sinB * marginOfError);
+
         return vitTun;
     }
+* */
+
+
 
     double speed,turn,strafe;
+    double vitTun = 1;
     public void run() {///TODO clean this up
         telemetry.update();
 
@@ -323,7 +332,9 @@ public class TeleOpNou2 extends LinearOpMode {
         lastrighttrigger=currentrighttrigger;
         if(shooting){
             shoot();
-            tun(1);
+            tun();
+
+
             if(functionshootstate == 2){
                 shooting = false;
                 functionshootstate = 0;
@@ -366,32 +377,49 @@ public class TeleOpNou2 extends LinearOpMode {
         ////////////////
 
 
-        double dist = calculateDistTun();
-        telemetry.addData("distance*: ",dist);
+         calculateDistTun();
+        double const1 = -0.165, const2 = 0.75;
+        vitTun = const1*trueTa + const2;
+        telemetry.addData("distance*: ",trueTa);
         if(alignRunning) telemetry.addLine("orientare ON");
         else telemetry.addLine("orientare OFF");
         telemetry.update();
 
+        boolean currentDown = gamepad2.dpad_down;
+        if(currentDown && !lastDown){
+            revLeft();
+        }
+        lastDown = currentDown;
 
         stop_revolver();
     }
 
-    boolean lastSquare = false;
+    boolean lastSquare = false, lastLeftArrow = false, lastRightArrow = false; // llA si lrA sunt temp pt testat
 
-    void tun(double vit) {
+    void tun() {
         boolean currentSquare = gamepad2.square;
         if (currentSquare && !lastSquare) {
             toggle_tun = !toggle_tun;
         }
+        /*
+        boolean leftArrow = gamepad2.dpad_left; // pt testat viteze
+        if(leftArrow && ! lastLeftArrow) vitTun -= 0.05;
+        boolean rightArrow = gamepad2.dpad_right;
+        if(rightArrow && !lastRightArrow) vitTun += 0.05;
+        lastLeftArrow = leftArrow; lastRightArrow = rightArrow;
+
+        * */
 
         lastSquare = currentSquare;
         if (toggle_tun) {
-            tun1.setPower(vit);
-            tun2.setPower(vit);
+            tun1.setPower(vitTun);
+            tun2.setPower(vitTun);
         } else {
             tun1.setPower(0);
             tun2.setPower(0);
         }
+
+        telemetry.addData("vit:",vitTun);
     }
 
 
@@ -521,7 +549,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
     public void revLeft(){
         double error = 0.01;
-
+        get_encoder_truepos();
         if (Math.abs(encoder_truepos - revpos1) < error) {
             rev.setPower(-1.0);
             encoder_ticks_needed = ((int)revpos2)*8192;

@@ -26,7 +26,7 @@ public class AutonomyDreapta extends OpMode {
         panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
 
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));
+        follower.setStartingPose(new Pose(88, 9, Math.toRadians(90)));
         pathState = 0;
         paths = new Paths(follower); // Build paths
 
@@ -63,9 +63,9 @@ public class AutonomyDreapta extends OpMode {
                             new BezierLine(
                                     new Pose(88.000, 9.000),
 
-                                    new Pose(88.000, 87.000)
+                                    new Pose(166.000, 9.000)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(225))
+                    ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(90))
 
                     .build();
 
