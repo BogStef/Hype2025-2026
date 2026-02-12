@@ -342,7 +342,7 @@ public class TeleOpNou2 extends LinearOpMode {
         }
 
         //tun(1);///0.367 ///square
-        intake(.7); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
+        intake(0.5); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
         //rev.setPosition((1-gamepad2.right_stick_y)/2);
 
         if (gamepad2.right_trigger > 0.3 && !storage_basic_running) { /// pornim storage basic
@@ -430,19 +430,10 @@ public class TeleOpNou2 extends LinearOpMode {
     ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
     void intake(double vit) {
         if (gamepad2.triangle) {
-            intake.setPower(vit);
+            intake.setPower(-vit);
         }
         if (gamepad2.cross) {
             intake.setPower(0);
-        }
-
-        if (gamepad2.circle) {
-            pass_intake = !pass_intake;
-            if (pass_intake) {
-                intake.setPower(vit);
-            } else {
-                intake.setPower(-1 * vit);
-            }
         }
     }
 
