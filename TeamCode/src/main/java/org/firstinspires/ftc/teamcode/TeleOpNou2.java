@@ -186,7 +186,7 @@ public class TeleOpNou2 extends LinearOpMode {
         toggle_tun = false;
         motif_code = -1;
         sort=false;//daca intram in modul de sortare(la finalul meciului)
-
+        revBusy = false;
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));///todo
 
