@@ -63,13 +63,13 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
 
-    public DcMotor intake_up;
-    public DcMotor intake_down;
+    //public DcMotor intake_up;
+    public DcMotor intake;
 
     public Servo push_tun;
     public CRServo rev;
 
-    public CRServo improvizatie_intake;
+    //public CRServo improvizatie_intake;
 
     public final double revpos1=0.06;
     public final double revpos2=0.42;
@@ -156,11 +156,11 @@ public class TeleOpNou2 extends LinearOpMode {
         tun1.setDirection(DcMotor.Direction.REVERSE);
 
         //intake_up = hardwareMap.get(DcMotor.class, "intake_up");///intake
-        intake_down = hardwareMap.get(DcMotor.class, "intake_down");
+        intake = hardwareMap.get(DcMotor.class, "intake");
         //intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         //intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         //intake_up.setDirection(DcMotor.Direction.REVERSE);
-        intake_down.setDirection(DcMotor.Direction.REVERSE);
+        intake.setDirection(DcMotor.Direction.REVERSE);
 
         imu = hardwareMap.get(IMU.class, "imu_expansion");///gyro
         imu.initialize(
@@ -179,7 +179,6 @@ public class TeleOpNou2 extends LinearOpMode {
 
         push_tun = hardwareMap.get(Servo.class,"push_tun");
         rev = hardwareMap.crservo.get("rev");
-        improvizatie_intake = hardwareMap.get(CRServo.class,"improvizatie_intake");
 
         pass_intake = false;///pass intake
         toggle_tun = false;
@@ -274,10 +273,9 @@ public class TeleOpNou2 extends LinearOpMode {
 
         double heading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
-
         if(starerun){
-            double tempStrafe = strafe * Math.cos(-heading) - speed * Math.sin(-heading);
-            double tempSpeed = strafe * Math.sin(-heading) + speed * Math.cos(-heading);
+            double tempStrafe = speed * Math.cos(-heading) - strafe * Math.sin(-heading);
+            double tempSpeed = speed * Math.sin(-heading) + strafe * Math.cos(-heading);
             speed=tempSpeed;
             strafe = tempStrafe;
         }
@@ -290,6 +288,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
             double raport =0.585; /// 0.585; //experimental
             double vit = 2787; //435 rpm / 60 * 345.5 ticks/rev
+            double tolerance = Math.toRadians(1.0);
 
 //            stft.setVelocity(stftpwr * raport * vit);
 //            drft.setVelocity(drftpwr * raport * vit);
@@ -342,7 +341,7 @@ public class TeleOpNou2 extends LinearOpMode {
         }
 
         //tun(1);///0.367 ///square
-        //intake(.7); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
+        intake(.7); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
         //rev.setPosition((1-gamepad2.right_stick_y)/2);
 
         if (gamepad2.right_trigger > 0.3 && !storage_basic_running) { /// pornim storage basic
@@ -378,7 +377,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
          calculateDistTun();
-        double const1 = -0.165, const2 = 0.75;
+        double const1 = -0.1, const2 = 0.75;
         vitTun = const1*trueTa + const2;
         telemetry.addData("distance*: ",trueTa);
         if(alignRunning) telemetry.addLine("orientare ON");
@@ -430,26 +429,19 @@ public class TeleOpNou2 extends LinearOpMode {
     ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
     void intake(double vit) {
         if (gamepad2.triangle) {
-            intake_up.setPower(vit);
-            intake_down.setPower(vit);
-            improvizatie_intake.setPower(.6);
+            intake.setPower(vit);
         }
         if (gamepad2.cross) {
-            intake_up.setPower(0);
-            intake_down.setPower(0);
-            improvizatie_intake.setPower(0);
+            intake.setPower(0);
         }
 
         if (gamepad2.circle) {
-            intake_up.setPower(0);
             pass_intake = !pass_intake;
             if (pass_intake) {
-                intake_down.setPower(vit);
+                intake.setPower(vit);
             } else {
-                intake_down.setPower(-1 * vit);
-                intake_up.setPower(-vit);
+                intake.setPower(-1 * vit);
             }
-            improvizatie_intake.setPower(0);
         }
     }
 
