@@ -86,7 +86,8 @@ public class TeleOpNou2 extends LinearOpMode {
     public int encoder_ticks;
     public double encoder_truepos;
     public int encoder_ticks_needed;
-
+    public boolean revBusy = false;
+    public double  encoder_currentPos;
     int shootState=0;
 
     public int getColor() { /// 0==mov 1==green
@@ -184,7 +185,7 @@ public class TeleOpNou2 extends LinearOpMode {
         toggle_tun = false;
         motif_code = -1;
         sort=false;//daca intram in modul de sortare(la finalul meciului)
-
+        revBusy = false;
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));///todo
 
@@ -509,51 +510,36 @@ public class TeleOpNou2 extends LinearOpMode {
 
     public void get_encoder_truepos(){
         encoder_ticks = encoder.getCurrentPosition();
-        encoder_truepos = encoder_ticks/8192.0 - Math.floor(encoder_ticks/8192.0);
+        encoder_truepos = (encoder_ticks/8192.0)*360 - Math.floor(encoder_ticks/8192.0)*360;
     }
 
     public void stop_revolver(){
+        get_encoder_truepos();
         if(rev.getPower() == 1.0)
-            if(encoder_ticks > encoder_ticks_needed)
+            if(encoder_currentPos >= encoder_truepos + 120) {
                 rev.setPower(0.0);
+                revBusy = false;
+            }
         else if(rev.getPower() == -1.0)
-            if(encoder_ticks < encoder_ticks_needed)
+            if(encoder_currentPos <= encoder_truepos - 120) {
                 rev.setPower(0.0);
+                revBusy = false;
+            }
     }
     ///TODO make continuous rotation && find pos with through bore encoder
     public void revRight(){
-        get_encoder_truepos();
-        double error = 0.01;
-        if (Math.abs(encoder_truepos - revpos1) < error) {
-            rev.setPower(1.0);
-            encoder_ticks_needed = ((int)revpos3)*8192;
-        } else if (Math.abs(encoder_truepos - revpos2) < error) {
-            rev.setPower(1.0);
-            encoder_ticks_needed = ((int)revpos1)*8192;
-        } else if (Math.abs(encoder_truepos - revpos3) < error) {
-            rev.setPower(1.0);
-            encoder_ticks_needed = ((int)revpos2)*8192;
-        } else {
-            rev.setPower(1.0);
-            encoder_ticks_needed = ((int)revpos1)*8192;;//might not be very good
+        if (!revBusy) {
+            rev.setPower(-1);
+            encoder_currentPos = encoder_truepos;
+            revBusy = true;
         }
     }
 
     public void revLeft(){
-        double error = 0.01;
-        get_encoder_truepos();
-        if (Math.abs(encoder_truepos - revpos1) < error) {
-            rev.setPower(-1.0);
-            encoder_ticks_needed = ((int)revpos2)*8192;
-        } else if (Math.abs(encoder_truepos - revpos2) < error) {
-            rev.setPower(-1.0);
-            encoder_ticks_needed = ((int)revpos3)*8192;
-        } else if (Math.abs(encoder_truepos - revpos3) < error) {
-            rev.setPower(-1.0);
-            encoder_ticks_needed = ((int)revpos1)*8192;
-        } else {
-            rev.setPower(-1.0);
-            encoder_ticks_needed = ((int)revpos1)*8192;
+        if (!revBusy) {
+            rev.setPower(1);
+            encoder_currentPos = encoder_truepos;
+            revBusy = true;
         }
     }
     /*public void old_revRight() {
