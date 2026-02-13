@@ -89,14 +89,19 @@ public class TeleOpNou2 extends LinearOpMode {
     public boolean revBusy = false;
     public double  encoder_currentPos;
     int shootState=0;
+    int color;
+    double red, blue, green, alpha, error;
+    double vitRev;
+    double targetAngle;
 
     public int getColor() { /// 0==mov 1==green
-        double red, blue, green, alpha, error;
+        //double red, blue, green, alpha, error;
         error = 120;
         red = colorsensor.red();
         blue = colorsensor.blue();
         green = colorsensor.green();
         alpha = colorsensor.alpha();
+
         if(green>95&&green>blue&&green>red){
             return 1;
         }
@@ -186,6 +191,7 @@ public class TeleOpNou2 extends LinearOpMode {
         motif_code = -1;
         sort=false;//daca intram in modul de sortare(la finalul meciului)
         revBusy = false;
+        vitRev = 0.5;
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));///todo
 
@@ -211,6 +217,8 @@ public class TeleOpNou2 extends LinearOpMode {
     boolean lastrighttrigger=false;
 
     boolean lastDown;
+    boolean lastDown1;
+    boolean lastDown2;
     double trueTa = 0.00;
 
     //PID
@@ -221,8 +229,8 @@ public class TeleOpNou2 extends LinearOpMode {
         if (result != null && result.isValid()) {
              ta = result.getTa();
         }
-        if(ta!=0)
-          trueTa = ta; // ne folosim numai de ta pt ca la zalau vom trage numa de pe linie ca urmare unghiul nu ne fut
+        else ta=0;
+        trueTa=ta; // ne folosim numai de ta pt ca la zalau vom trage numa de pe linie ca urmare unghiul nu ne fut
     }
 
 /*
@@ -279,6 +287,7 @@ public class TeleOpNou2 extends LinearOpMode {
             double tempSpeed = speed * Math.sin(-heading) + strafe * Math.cos(-heading);
             speed=tempSpeed;
             strafe = tempStrafe;
+            telemetry.addData("gyro",starerun);
         }
 
 
@@ -323,6 +332,8 @@ public class TeleOpNou2 extends LinearOpMode {
 
       if (motif_code == -1)  motif_code = motif(); //cauta motif
 
+        telemetry.addData("motif",motif_code);
+
 
       /// OVVERIDE LA SHOOT
         boolean currentrighttrigger=gamepad2.right_bumper;
@@ -330,19 +341,27 @@ public class TeleOpNou2 extends LinearOpMode {
             shooting=true;
         }
         lastrighttrigger=currentrighttrigger;
+        /////////
+
         if(shooting){
             shoot();
-            tun();
-
-
+            //tun(vitTun);
             if(functionshootstate == 2){
                 shooting = false;
                 functionshootstate = 0;
             }
         }
+       /////////////////////
+        //////////////////
+        ///////////////////
+        /////////////////////
+        ///////////////////
 
-        //tun(1);///0.367 ///square
-        intake(0.5); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
+        ////////
+
+
+
+        intake(0.67); ///triunghi = on //cross = stop //circle= pass (parametru viteza de la 0 la 1)
         //rev.setPosition((1-gamepad2.right_stick_y)/2);
 
         if (gamepad2.right_trigger > 0.3 && !storage_basic_running) { /// pornim storage basic
@@ -380,46 +399,64 @@ public class TeleOpNou2 extends LinearOpMode {
          calculateDistTun();
         double const1 = -0.1, const2 = 0.75;
         vitTun = const1*trueTa + const2;
-        telemetry.addData("distance*: ",trueTa);
-        if(alignRunning) telemetry.addLine("orientare ON");
-        else telemetry.addLine("orientare OFF");
-        telemetry.update();
+        tun(vitTun);
+        color = getColor();
+        /*telemetry.addData("color: ", color);
+        telemetry.addData("red: ", red);
+        telemetry.addData("green: ", green);
+        telemetry.addData("blue: ", blue);
+        telemetry.addData("alpha: ", alpha);
+        telemetry.update();*/
 
+//teste pt rev left si right si un stop ca plm
         boolean currentDown = gamepad2.dpad_down;
         if(currentDown && !lastDown){
             revLeft();
         }
         lastDown = currentDown;
 
+        boolean currentDown1 = gamepad2.dpad_up;
+        if(currentDown1 && !lastDown1){
+            revRight();
+        }
+        lastDown1 = currentDown1;
+
+
+
+        boolean currentDown2 = gamepad2.dpad_left;
+        if(currentDown2 && !lastDown2){
+            rev.setPower(0.0);
+            revBusy = false;
+        }
+        lastDown2 = currentDown2;
+
         stop_revolver();
+        telemetry.addData("encoder: ", encoder_truepos);
+        telemetry.addData("needed pos: ", encoder_currentPos);
+        if(gamepad2.right_stick_y>=0&&gamepad2.right_stick_y<=1)
+            push_tun.setPosition(gamepad2.right_stick_y);
+        else
+            push_tun.setPosition(.5);
+        telemetry.update();
     }
 
     boolean lastSquare = false, lastLeftArrow = false, lastRightArrow = false; // llA si lrA sunt temp pt testat
 
-    void tun() {
+    void tun(double v) {
         boolean currentSquare = gamepad2.square;
         if (currentSquare && !lastSquare) {
             toggle_tun = !toggle_tun;
         }
-        /*
-        boolean leftArrow = gamepad2.dpad_left; // pt testat viteze
-        if(leftArrow && ! lastLeftArrow) vitTun -= 0.05;
-        boolean rightArrow = gamepad2.dpad_right;
-        if(rightArrow && !lastRightArrow) vitTun += 0.05;
-        lastLeftArrow = leftArrow; lastRightArrow = rightArrow;
-
-        * */
-
         lastSquare = currentSquare;
         if (toggle_tun) {
-            tun1.setPower(vitTun);
-            tun2.setPower(vitTun);
+            tun1.setPower(v);
+            tun2.setPower(v);
         } else {
-            tun1.setPower(0);
-            tun2.setPower(0);
+            tun1.setVelocity(0);
+            tun2.setVelocity(0);
         }
 
-        telemetry.addData("vit:",vitTun);
+        telemetry.addData("vit:",v);
     }
 
 
@@ -501,35 +538,40 @@ public class TeleOpNou2 extends LinearOpMode {
 
     public void get_encoder_truepos(){
         encoder_ticks = encoder.getCurrentPosition();
-        encoder_truepos = (encoder_ticks/8192.0)*360 - Math.floor(encoder_ticks/8192.0)*360;
+        encoder_truepos = (encoder_ticks/8192.0)*360;
     }
 
     public void stop_revolver(){
+        if (!revBusy) return;
         get_encoder_truepos();
-        if(rev.getPower() == 1.0)
-            if(encoder_currentPos >= encoder_truepos + 120) {
-                rev.setPower(0.0);
+        if (rev.getPower()>0) {
+            if (encoder_truepos >= encoder_currentPos +30) {
+                rev.setPower(0);
                 revBusy = false;
             }
-        else if(rev.getPower() == -1.0)
-            if(encoder_currentPos <= encoder_truepos - 120) {
-                rev.setPower(0.0);
+        }
+        else if (rev.getPower()<0) {
+            if (encoder_truepos <= encoder_currentPos -30) {
+                rev.setPower(0);
                 revBusy = false;
             }
+        }
     }
     ///TODO make continuous rotation && find pos with through bore encoder
     public void revRight(){
         if (!revBusy) {
-            rev.setPower(-1);
+            get_encoder_truepos();
             encoder_currentPos = encoder_truepos;
+            rev.setPower(vitRev);
             revBusy = true;
         }
     }
 
     public void revLeft(){
         if (!revBusy) {
-            rev.setPower(1);
+            get_encoder_truepos();
             encoder_currentPos = encoder_truepos;
+            rev.setPower(-vitRev);
             revBusy = true;
         }
     }
@@ -572,13 +614,13 @@ public class TeleOpNou2 extends LinearOpMode {
         switch(functionshootstate){
             case 0:
                 shootTimer.reset();
-                push_tun.setPosition(.50);
+                push_tun.setPosition(.28);
                 functionshootstate = 1;
                 break;
 
             case 1:
                 if(shootTimer.milliseconds() > 200){
-                    push_tun.setPosition(.28);
+                    push_tun.setPosition(0);
                     functionshootstate = 2;
                 }
                 break;
@@ -694,9 +736,8 @@ public class TeleOpNou2 extends LinearOpMode {
     ElapsedTime timer_storage_basic=new ElapsedTime();
     public void storage_basic(){
         if(!storage_basic_running) return;
-
-        int revtime = 90;
-        int shoottime = 50;
+        int revtime = 900;
+        int shoottime = 500;
         switch (basic_state){
             case 0://shoot
                 shooting=true;
@@ -746,7 +787,7 @@ public class TeleOpNou2 extends LinearOpMode {
             case 5: storage_basic_running = false;///stop
                 break;
         }
-    };
+    }
     boolean alignRunning = false;
     boolean aPrev = false;
     double filteredTx = 0;
@@ -775,7 +816,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
         double kP = 0.0022;
         double maxPower = 0.1;
-        double deadband = 3 ;
+        double deadband = 6 ;
         double ALIGN_SPEED = 0.8 ;
 
         double absTx = Math.abs(filteredTx);
