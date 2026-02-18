@@ -426,20 +426,20 @@ public class TeleOpNou2 extends LinearOpMode {
         boolean currentDown = gamepad2.dpad_down;
         if (currentDown && !lastDown1) {
             switch (motif_switch) {
-                case 0: neededOrder[0] = 1;
+                case 23: neededOrder[0] = 1;
                     neededOrder[1] = 0;
                     neededOrder[2] = 0;
-                    motif_switch++;
+                    motif_switch=21;
                     break;
-                case 1: neededOrder[0] = 0;
+                case 21: neededOrder[0] = 0;
                     neededOrder[1] = 1;
                     neededOrder[2] = 0;
-                    motif_switch++;
+                    motif_switch=22;
                     break;
-                case 2: neededOrder[0] = 0;
+                case 22: neededOrder[0] = 0;
                     neededOrder[1] = 0;
                     neededOrder[2] = 1;
-                    motif_switch=0;
+                    motif_switch=23;
                     break;
             }
         }
@@ -523,19 +523,21 @@ public class TeleOpNou2 extends LinearOpMode {
         }
 
         // detectare bila
-        distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
-        ballDetected = distanceCM < distanta_proxsensorCM;
+        if (!sort) {
+            distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
+            ballDetected = distanceCM < distanta_proxsensorCM;
 
-        if (ballDetected && !lastBallDetected && ballCount < 2 && IntakeTimer.milliseconds()>300) {
-            revLeft();   // muta revolver o poziție
-            ballCount++;
-            IntakeTimer.reset();
-        }
-        if(ballCount>=2 && toggle_intake){
-            intake.setPower(.8*vit);
-        }
+            if (ballDetected && !lastBallDetected && ballCount < 2 && IntakeTimer.milliseconds() > 300) {
+                revLeft();   // muta revolver o poziție
+                ballCount++;
+                IntakeTimer.reset();
+            }
+            if (ballCount >= 2 && toggle_intake) {
+                intake.setPower(.8 * vit);
+            }
 
-        lastBallDetected = ballDetected;
+            lastBallDetected = ballDetected;
+        }
     }
 
 
