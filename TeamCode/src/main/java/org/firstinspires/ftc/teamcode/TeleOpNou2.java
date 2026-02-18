@@ -410,7 +410,7 @@ public class TeleOpNou2 extends LinearOpMode {
         boolean currentDown1 = gamepad2.dpad_right;
         if(currentDown1 && !lastDpadUp){
             readytoshoot = !readytoshoot;
-           // telemetry.addLine("revRight");
+            // telemetry.addLine("revRight");
         }
         lastDpadUp = currentDown1;
 
@@ -447,7 +447,7 @@ public class TeleOpNou2 extends LinearOpMode {
         boolean currentDown2 = gamepad2.dpad_left;
         if(currentDown2 && !lastDown2){
             revLeft();
-           // telemetry.addLine("revleft");
+            // telemetry.addLine("revleft");
         }
         lastDown2 = currentDown2;
         color = getColor();
@@ -744,7 +744,7 @@ public class TeleOpNou2 extends LinearOpMode {
     public int nrBallBasic = 0;
     ElapsedTime sort_timer = new ElapsedTime();
     int sortDelay = 350;
-    public boolean[] orderBall = {false , false , false};
+    public int[] orderBall = {0 , 0 , 0};
     public boolean readytoshoot = false;
     ///todo add timer or fix it
     public void storage_sort(){
@@ -762,11 +762,11 @@ public class TeleOpNou2 extends LinearOpMode {
                 if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
                     if (getColor() == neededOrder[0]) {
                         revLeft();
-                        orderBall[0] = true;
+                        orderBall[0] = 1;
                         nrBall++;
                     } else {
                         revRight();
-                        orderBall[0] = false;
+                        orderBall[0] = 0;
                         nrBall++;
                     }
                     sort_timer.reset();
@@ -775,14 +775,14 @@ public class TeleOpNou2 extends LinearOpMode {
             case 1: if (sort_timer.milliseconds() > sortDelay) {
                 nrBall++;
             }
-            break;
+                break;
             case 2:
                 if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
                     if (getColor() == neededOrder[1]) {
-                        orderBall[1] = true;
+                        orderBall[1] = 1;
                     }
-                    else orderBall[1] = false;
-                    if (orderBall[0]) {
+                    else orderBall[1] = 0;
+                    if (orderBall[0] == 1) {
                         revLeft();
                         nrBall++;
                     } else {
@@ -799,16 +799,23 @@ public class TeleOpNou2 extends LinearOpMode {
             case 4:
                 if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
                     if (getColor() == neededOrder[2]) {
-                        orderBall[2] = true;
+                        orderBall[2] = 1;
                     }
-                    else orderBall[2] = false;
-                    if (orderBall[1] == false && orderBall[0] == false) {
-                        revRight();
-                    }
+                    else orderBall[2] = 0;
+
                     nrBall++;
+                }
+                break;
+            case 5:
+                if (orderBall[0] == 0 || orderBall[1] == 0 || orderBall[2] == 0) {
+                    if (orderBall[2] == neededOrder[0])
+                        revRight();
+                }
                     sort_timer.reset();
                     shootState=0;
-                }
+                    nrBall++;
+                break;
+            case 6:
                 break;
         }
         if (readytoshoot) {
@@ -834,7 +841,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
                 case 1:
                     if (sort_timer.milliseconds() > sortDelay) {
-                        if (orderBall[1]) revRight();
+                        if (getColor() == neededOrder[1]) revRight();
                         else revLeft();
                         sort_timer.reset();
                         shootState = 2;
@@ -860,7 +867,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
                 case 3:
                     if (sort_timer.milliseconds() > sortDelay) {
-                        if (orderBall[1]) revRight();
+                        if (getColor() != -1) revRight();
                         else revLeft();
                         sort_timer.reset();
                         shootState = 4;
