@@ -234,6 +234,8 @@ public class TeleOpNou2 extends LinearOpMode {
     boolean lastDown1;
     boolean lastDown2;
     double trueTa = 0.00;
+    double trueTx=0.00;
+
 
     //PID
     public void calculateDistTun() {
@@ -245,6 +247,15 @@ public class TeleOpNou2 extends LinearOpMode {
         }
         else ta=0;
         trueTa=ta; // ne folosim numai de ta pt ca la zalau vom trage numa de pe linie ca urmare unghiul nu ne fut
+    }
+    public void calculateTrueTx(){
+        double Tx = 0.00;
+        LLResult result = limelight.getLatestResult();;
+        if(result!=null && result.isValid()){
+            Tx = result.getTx();
+        }
+        else Tx=0.0;
+        trueTx = Tx;
     }
 
     /*
@@ -284,7 +295,6 @@ public class TeleOpNou2 extends LinearOpMode {
         speed = gamepad1.left_stick_y;
 
         turn = gamepad1.right_stick_x;
-        if(disable_driver_turn) turn =0;
         strafe = gamepad1.left_stick_x;
 
         telemetry.addData("raw unghi",imu.getRobotYawPitchRollAngles());
@@ -304,29 +314,6 @@ public class TeleOpNou2 extends LinearOpMode {
         stspapwr = speed + turn - strafe;
         drspapwr = speed - turn + strafe;
 
-//        double raport =0.585; /// 0.585; //experimental
-//        double vit = 2787; //435 rpm / 60 * 345.5 ticks/rev
-//        double tolerance = Math.toRadians(1.0);
-        /*
-        //            stft.setVelocity(stftpwr * raport * vit);
-        //            drft.setVelocity(drftpwr * raport * vit);
-        //            stspa.setVelocity(stspapwr * raport * vit);
-        //            drspa.setVelocity(drspapwr * raport * vit);
-
-        stftpwr = Range.clip(stftpwr, -1, 1);
-        drftpwr = Range.clip(drftpwr, -1, 1);
-        stspapwr = Range.clip(stspapwr, -1, 1);
-        drspapwr = Range.clip(drspapwr, -1, 1);
-        double max = Math.max(Math.abs(stftpwr), Math.abs(drftpwr));
-        max = Math.max(max, Math.abs(stspapwr));
-        max = Math.max(max, Math.abs(drspapwr));
-
-        if(max > 1){
-            stftpwr /= max;
-            drftpwr /= max;
-            stspapwr /= max;
-            drspapwr /= max;
-        }*/
 
         double maxspeed=0.5;
         stft.setPower(stftpwr*maxspeed);
@@ -369,8 +356,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
 
-        intake(0.5); ///triunghi = on //cross = stop
-        //rev.setPosition((1-gamepad2.right_stick_y)/2);
+        intake(0.5); /// triangle
 
         if (gamepad2.right_trigger > 0.3 && !storage_basic_running) { /// pornim storage basic
             storage_basic_running = true;
@@ -400,15 +386,6 @@ public class TeleOpNou2 extends LinearOpMode {
         }
 
         aPrev = currentA;
-
-        if (alignRunning) {
-            orientare();
-            telemetry.addLine("ALIIGNING ON");
-        }
-        else{
-            disable_driver_turn=false;
-            telemetry.addLine("ALLIGNING OFF");
-        }
         ////////////////
 
 
@@ -475,20 +452,7 @@ public class TeleOpNou2 extends LinearOpMode {
         lastDown2 = currentDown2;
         color = getColor();
         distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
-        //telemetry.addData("revpos",rev.getPosition());
         telemetry.addData("motif",motif_code);
-        //telemetry.addData("basicstate",basic_state);
-        //telemetry.addData("shooting ",shooting);
-        //telemetry.addData("shoot state", functionshootstate);
-        telemetry.addData("color ", color);
-        //telemetry.addData("red",colorsensor.red());
-        //telemetry.addData("green",colorsensor.green());
-        //telemetry.addData("blue", colorsensor.blue());
-        //telemetry.addData("alpha", colorsensor.alpha());
-        //telemetry.addData("distanta ",distanceCM);
-        //telemetry.addData("ta",trueTa);
-        //PIDFCoefficients defaultpidftun=tun1.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
-        //telemetry.addData("pidf", defaultpidftun);
         telemetry.addData("sorting",sort);
         telemetry.addData("sorting state",nrBall);
         telemetry.addData("motif switch",motif_switch);
@@ -497,7 +461,10 @@ public class TeleOpNou2 extends LinearOpMode {
         telemetry.addData("ball 3",orderBall[2]);
         telemetry.addData("ready to shoot",readytoshoot);
         telemetry.addData("shoot state",shootState);
-        telemetry.update();
+        telemetry.addData("TA",trueTa);
+        calculateTrueTx();
+        telemetry.addData("tx",trueTx);
+
     }
 
     boolean lastSquare = false, lastLeftArrow = false, lastRightArrow = false; // llA si lrA sunt temp pt testat
@@ -559,11 +526,13 @@ public class TeleOpNou2 extends LinearOpMode {
         distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
         ballDetected = distanceCM < distanta_proxsensorCM;
 
-        if (ballDetected && !lastBallDetected && ballCount < 3 && IntakeTimer.milliseconds()>300) {
-
+        if (ballDetected && !lastBallDetected && ballCount < 2 && IntakeTimer.milliseconds()>300) {
             revLeft();   // muta revolver o poziție
             ballCount++;
             IntakeTimer.reset();
+        }
+        if(ballCount>=2 && toggle_intake){
+            intake.setPower(.8*vit);
         }
 
         lastBallDetected = ballDetected;
@@ -779,6 +748,15 @@ public class TeleOpNou2 extends LinearOpMode {
     public boolean readytoshoot = false;
     ///todo add timer or fix it
     public void storage_sort(){
+        /*
+        toate valorile ajung in array care il folosim la final
+        prima minge buna = revLeft
+        prima minge rea = rev right
+        daca prima minge buna atunci a doua minge revleft
+        altfel daca prima minge rea rev right (verificam culoare)
+        la final mingea buna in tun
+        verificam care ii urm buna (ori intake ori storage) si in functie de asta rev right x 2 sau ref left x2
+         */
         switch(nrBall) {
             case 0:
                 if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
@@ -916,8 +894,8 @@ public class TeleOpNou2 extends LinearOpMode {
     boolean storage_basic_running = false;
     ElapsedTime timer_storage_basic=new ElapsedTime();
 
-    int revDelay = 350;   // pauza după revLeft (ms)
-    int shootDelay = 400; // cât ținem push_tun apăsat (ms)
+    int revDelay = 600;   // pauza după revLeft (ms)
+    int shootDelay = 800; // cât ținem push_tun apăsat (ms)
 
     boolean storageShooting = false; // new flag to indicate storage-controlled shooting
 
@@ -1049,69 +1027,10 @@ public class TeleOpNou2 extends LinearOpMode {
     double lastSeenDirection=1;
     double searchPower = 0.003;
     boolean search =false;
-    boolean disable_driver_turn=false;
+
     ElapsedTime searchTimer = new ElapsedTime();
 
-    public void orientare() {
-        LLResult result = limelight.getLatestResult();
-        if (result == null || !result.isValid()) {
-            disable_driver_turn=false;
-            return;
-        }
-        search = false;
-        disable_driver_turn=true;
 
-        double rawTx = result.getTx();
-        filteredTx = 0.9 * filteredTx + 0.1 * rawTx;
-        if(Math.abs(filteredTx)>1)
-            lastSeenDirection = filteredTx;
-        // ===== PARAMETRI FINI =====
-
-        double kP = 0.0022;
-        double maxPower = 0.1;
-        double deadband = 6 ;
-        double ALIGN_SPEED = 0.8 ;
-
-        double absTx = Math.abs(filteredTx);
-
-        if (absTx < deadband) {
-            stopDrive();
-            lastAlignPower = 0;
-            orientareGata = true;
-            return;
-        }
-
-        double scale;//setam viteza de rotatie in functie de unghi
-        //daca unghiu e mare(adica e rau) atunci ne miscam repede
-        //daca unghiu e mic (adica aproape perfect) atunci ne miscam inet
-        //        if (absTx > 6) scale = 1.0;
-        //        else if (absTx > 2) scale = 0.5;
-        //        else scale = 0.25;
-        scale = 1/27 * (absTx*absTx) + 0.15; /// scale(absTx) = 1/30 * absTx^2+0.05 (functie)
-        if(scale>1) scale=1;
-
-        double desiredPower = kP * filteredTx * scale;
-        desiredPower = Range.clip(desiredPower, -maxPower, maxPower);
-
-        // LIMITARE ACCELERAȚIE
-        double maxDelta = 0.0015;
-        double power = Range.clip(
-                desiredPower,
-                lastAlignPower - maxDelta,
-                lastAlignPower + maxDelta
-        );
-
-        power *= ALIGN_SPEED;
-        lastAlignPower = power;
-        if(Math.abs(speed)<0.05&&Math.abs(strafe)<0.05&&Math.abs(turn)<0.5){
-            stft.setPower(power);
-            drft.setPower(-power);
-            stspa.setPower(power);
-            drspa.setPower(-power);
-        }
-
-
-    }
 
 
 
