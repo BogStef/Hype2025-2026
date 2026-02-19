@@ -27,7 +27,9 @@ public class Constants {
                     .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
                     .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
                     .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
+                    .maxPower(.45)
                     .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD);
+
     public static OTOSConstants localizerConstants = new OTOSConstants()
             .hardwareMapName("otos")
             .offset(new SparkFunOTOS.Pose2D(27.164,110.206,Math.PI/2)) //todo test offset

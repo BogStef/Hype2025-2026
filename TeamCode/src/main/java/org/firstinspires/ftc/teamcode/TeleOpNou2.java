@@ -91,9 +91,9 @@ public class TeleOpNou2 extends LinearOpMode {
     public int encoder_ticks_needed;
     public boolean revBusy = false;
     public double  encoder_currentPos;
-    int shootState=0;
+    int shootState=-1;
     int color;
-    double red, blue, green, alpha, error;
+    double red, blue, green, alpha;
     double vitRev;
     double targetAngle;
     double speedDown;
@@ -101,8 +101,11 @@ public class TeleOpNou2 extends LinearOpMode {
     int index, target;
     boolean pressedUp;
     int motif_switch = 0;
+    boolean lastLeftTrigger;
+    boolean lastBumper;
     public int getColor() { /// 0==mov 1==green
         //double red, blue, green, alpha, error;
+        double error;
         error = 120;
         red = colorsensor.red();
         blue = colorsensor.blue();
@@ -171,10 +174,7 @@ public class TeleOpNou2 extends LinearOpMode {
         tun2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         //intake_up = hardwareMap.get(DcMotor.class, "intake_up");///intake
         intake = hardwareMap.get(DcMotor.class, "intake");
-        //intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        //intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        //intake_up.setDirection(DcMotor.Direction.REVERSE);
-        intake.setDirection(DcMotor.Direction.REVERSE);
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         imu = hardwareMap.get(IMU.class, "imu_expansion");///gyro
         imu.initialize(
@@ -210,15 +210,9 @@ public class TeleOpNou2 extends LinearOpMode {
         encoder = hardwareMap.dcMotor.get("ThroughBoreEncoder");
         encoder.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         encoder.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        tun_test=0;
     }
-    boolean pressedl = false;
-    int tun_test;
     boolean starerun = true;
     boolean pressedb = false;
-    double resunghi = 0;
-    double unghi = 0;
-    double maxi = 0;
 
 
     double p = 10;//25
@@ -229,8 +223,6 @@ public class TeleOpNou2 extends LinearOpMode {
     boolean sort;
     boolean shooting = false;
     boolean lastrighttrigger=false;
-
-    boolean lastDown;
     boolean lastDown1;
     boolean lastDown2;
     double trueTa = 0.00;
@@ -238,7 +230,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
     //PID
-    public void calculateDistTun() {
+    public void calculateTrueTa() {
         double ta = 0.00;
 
         LLResult result = limelight.getLatestResult();
@@ -258,68 +250,108 @@ public class TeleOpNou2 extends LinearOpMode {
         trueTx = Tx;
     }
 
-    /*
-    * nu merge pt ca DT inca e in hypemetrii si h e in cm la fel si q
-    * public double calcVitezaTun () {
-            double vitTun=0;
-            double cosB, sinB, Q=1, marginOfError = 1;
-            double DT = calculateDistTun();
-            cosB = Math.sqrt(1-(75/DT)*(75/DT));
-            sinB = 1 - (cosB*cosB);
-            vitTun = Math.sqrt(9.81 * (DT*cosB+Q) /sinB /sinB /sinB * marginOfError);
-
-            return vitTun;
-        }
-    * */
-
-
-
-    double speed,turn,strafe;
     double vitTun = 1;
     double vitTun2 = 1;
+
+    public void drive(double speed,double turn,double strafe,double maxspeed){
+        double stftpwr,drftpwr,stspapwr,drspapwr;
+        stftpwr = speed + turn + strafe;
+        drftpwr = speed - turn - strafe;
+        stspapwr = speed + turn - strafe;
+        drspapwr = speed - turn + strafe;
+        stft.setPower(stftpwr*maxspeed);
+        drft.setPower(drftpwr*maxspeed);
+        stspa.setPower(stspapwr*maxspeed);
+        drspa.setPower(drspapwr*maxspeed);
+    }
+
+    double kP = 0.04;
+    double error = 0;
+    double lastError = 0;
+    double angleTolerance = .5;
+    double kD = 0.006;
+    double curTime = 0;
+    double lastTime = 0;
+//    double [] stepSizes ={0.1,0.001,0.0001};
+//    int stepIndex = 2;
+    public void allign(double goalX){
+        double tx = 0;
+        if(gamepad1.left_trigger>.2){
+            LLResult result = limelight.getLatestResult();
+            List<FiducialResult> tags = result.getFiducialResults();
+            if (result == null || !result.isValid()|| tags.isEmpty()) {
+                lastTime = getRuntime();
+                lastError = 0;
+                drive(speed,turn,strafe,maxspeed);
+                return;
+            }
+
+            for (FiducialResult tag : tags) {
+                int id = tag.getFiducialId();
+                if (id == 24 || id == 20 ) {
+                    error = goalX - result.getTx();
+                    telemetry.addLine("ALLINING");
+                    if(Math.abs(error) < angleTolerance){
+                        drive(speed,0,strafe,maxspeed);
+                    }
+                    else{
+                        double pTerm = error *kP;
+                        curTime = getRuntime();
+                        double dT = curTime - lastTime;
+                        double dTerm = ((error-lastError)/dT)*kD;
+                        drive(speed,Range.clip((pTerm+dTerm)*-1, - 0.4, 0.4),strafe,maxspeed);
+                        lastError = error;
+                        lastTime = curTime;
+                    }
+                }
+                else{
+                    lastTime = getRuntime();
+                    lastError = 0;
+                    drive(speed,turn,strafe,maxspeed);
+                    return;
+                }
+            }
+        }
+        else{
+            lastError = 0;
+            lastTime = getRuntime();
+            drive(speed,turn,strafe,maxspeed);
+        }
+    }
+
+    final double maxspeed = 0.7;
+    double speed,turn,strafe;
     public void run() {///TODO clean this up
-        telemetry.update();
-
-
-
         boolean isTriggerPressedb = gamepad1.circle;
         if (isTriggerPressedb && !pressedb) { //circle
             starerun = !starerun;
         }
         pressedb = isTriggerPressedb;
 
-        double stftpwr;
-        double stspapwr;
-        double drftpwr;
-        double drspapwr;
-        speed = gamepad1.left_stick_y;
 
+        speed = -gamepad1.left_stick_y;
         turn = gamepad1.right_stick_x;
         strafe = gamepad1.left_stick_x;
 
         telemetry.addData("raw unghi",imu.getRobotYawPitchRollAngles());
         double heading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
-        if(starerun){
-            double tempStrafe = speed * Math.cos(-heading) - strafe * Math.sin(-heading);
-            double tempSpeed = speed * Math.sin(-heading) + strafe * Math.cos(-heading);
-            speed=tempSpeed;
+        if(starerun){ ///toggle field centric drive
+
+            double tempSpeed  = speed * Math.cos(-heading) + strafe * Math.sin(-heading);
+            double tempStrafe = -speed * Math.sin(-heading) + strafe * Math.cos(-heading);
+
+            speed  = tempSpeed;
             strafe = tempStrafe;
-            telemetry.addData("gyro",starerun);
+            telemetry.addData("gyro", starerun);
         }
+        if(gamepad1.right_trigger>0.2){
+            drive(speed,turn,strafe,maxspeed+0.2);
+        }
+        else if(gamepad1.left_trigger<0.2)
+            drive(speed,turn,strafe,maxspeed);
 
 
-        stftpwr = speed + turn + strafe;
-        drftpwr = speed - turn - strafe;
-        stspapwr = speed + turn - strafe;
-        drspapwr = speed - turn + strafe;
-
-
-        double maxspeed=0.5;
-        stft.setPower(stftpwr*maxspeed);
-        drft.setPower(drftpwr*maxspeed);
-        stspa.setPower(stspapwr*maxspeed);
-        drspa.setPower(drspapwr*maxspeed);
 
         ////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////
@@ -364,32 +396,38 @@ public class TeleOpNou2 extends LinearOpMode {
             timer_storage_basic.reset();
             storage_basic();
         }
-        if(gamepad2.left_trigger>0.3){//stop fortat la basic storage
-            storage_basic_running=false;
-            basic_state=0;
-            timer_storage_basic.reset();
-        }
         if(storage_basic_running) storage_basic();
+
+        //starts the sorting process, press again to turn off
+        boolean ltPressed;
+        if(gamepad2.left_trigger>0.3){ //stop fortat la basic storage
+            ltPressed = true;
+        }
+        else ltPressed = false;
+
+        if (ltPressed && !lastLeftTrigger) {
+            sort = !sort;
+            sortState=0;
+            sort_timer.reset();
+        }
+        lastLeftTrigger = ltPressed;
+
+        //shoots the sorted balls once they are sorted
+        boolean curBumper = gamepad2.left_bumper;
+        if (curBumper && !lastBumper) readytoshoot= !readytoshoot;
+        lastBumper = curBumper;
+        if (sort) storage_sort();
 
 
 
         /// ORIENTARE
-        // apasa driver1 oe a
-        boolean currentA = gamepad1.square;
-
-        if (currentA && !aPrev) {
-            alignRunning = !alignRunning;
-            filteredTx = 0;
-            lastAlignPower = 0;
-            lastSeenDirection = 0;
-            orientareGata = false;
-        }
-
-        aPrev = currentA;
+        // driver 1 apasa pe left trigger
+        allign(0);
         ////////////////
 
 
-        calculateDistTun();
+        calculateTrueTa();
+        calculateTrueTx();
         double const1 = 310, const2 = 900;
         if(trueTa!=0){
             vitTun = const1/trueTa + const2;
@@ -404,24 +442,9 @@ public class TeleOpNou2 extends LinearOpMode {
 
 
         tun(vitTun,vitTun2);
-        tun1.setVelocityPIDFCoefficients(6.7,0,0.01,11.7);
-        tun2.setVelocityPIDFCoefficients(6.7,0,0.01,11.7);
+        tun1.setVelocityPIDFCoefficients(6.7,0,0.1,11.7);
+        tun2.setVelocityPIDFCoefficients(6.7,0,0.1,11.7);
 
-        boolean currentDown1 = gamepad2.dpad_right;
-        if(currentDown1 && !lastDpadUp){
-            readytoshoot = !readytoshoot;
-            // telemetry.addLine("revRight");
-        }
-        lastDpadUp = currentDown1;
-
-        boolean currentUp = gamepad2.dpad_up;
-        if (currentUp && !lastDown) {
-            sort = !sort;
-            nrBall=0;
-            sort_timer.reset();
-        }
-        lastDown = currentUp;
-        if (sort) storage_sort();
 
         boolean currentDown = gamepad2.dpad_down;
         if (currentDown && !lastDown1) {
@@ -444,6 +467,13 @@ public class TeleOpNou2 extends LinearOpMode {
             }
         }
         lastDown1 = currentDown;
+
+        boolean currentDown1 = gamepad2.dpad_right;
+        if(currentDown1 && !lastDpadUp){
+            revRight();
+        }
+        lastDpadUp = currentDown1;
+
         boolean currentDown2 = gamepad2.dpad_left;
         if(currentDown2 && !lastDown2){
             revLeft();
@@ -454,7 +484,7 @@ public class TeleOpNou2 extends LinearOpMode {
         distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
         telemetry.addData("motif",motif_code);
         telemetry.addData("sorting",sort);
-        telemetry.addData("sorting state",nrBall);
+        telemetry.addData("sorting state",sortState);
         telemetry.addData("motif switch",motif_switch);
         telemetry.addData("ball 1",orderBall[0]);
         telemetry.addData("ball 2",orderBall[1]);
@@ -462,8 +492,8 @@ public class TeleOpNou2 extends LinearOpMode {
         telemetry.addData("ready to shoot",readytoshoot);
         telemetry.addData("shoot state",shootState);
         telemetry.addData("TA",trueTa);
-        calculateTrueTx();
         telemetry.addData("tx",trueTx);
+        telemetry.update();
 
     }
 
@@ -563,23 +593,6 @@ public class TeleOpNou2 extends LinearOpMode {
                 telemetry.addData("Motif Found", id);
                 telemetry.update();
                 neededOrder[id-21] = 1;
-                    /*switch(id){
-                        case 21:
-                            neededOrder[0] = 1;
-                            neededOrder[1] = 0;
-                            neededOrder[2] = 0;
-                            break;
-                        case 22:
-                            neededOrder[0] = 0;
-                            neededOrder[1] = 1;
-                            neededOrder[2] = 0;
-                            break;
-                        case 23:
-                            neededOrder[0] = 0;
-                            neededOrder[1] = 0;
-                            neededOrder[2] = 1;
-                            break;
-                    }*/
                 return id;
 
 
@@ -742,13 +755,11 @@ public class TeleOpNou2 extends LinearOpMode {
     }
 
 
-    public int nrBall = 0;
-    public int nrBallBasic = 0;
+    public int sortState = 0;
     ElapsedTime sort_timer = new ElapsedTime();
     int sortDelay = 350;
-    public int[] orderBall = {0 , 0 , 0};
+    public int [] orderBall = {0 , 0 , 0};
     public boolean readytoshoot = false;
-    ///todo add timer or fix it
     public void storage_sort(){
         /*
         toate valorile ajung in array care il folosim la final
@@ -759,23 +770,23 @@ public class TeleOpNou2 extends LinearOpMode {
         la final mingea buna in tun
         verificam care ii urm buna (ori intake ori storage) si in functie de asta rev right x 2 sau ref left x2
          */
-        switch(nrBall) {
+        switch(sortState) {
             case 0:
                 if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
                     if (getColor() == neededOrder[0]) {
                         revLeft();
                         orderBall[0] = 1;
-                        nrBall++;
+                        sortState++;
                     } else {
                         revRight();
                         orderBall[0] = 0;
-                        nrBall++;
+                        sortState++;
                     }
                     sort_timer.reset();
                 }
                 break;
             case 1: if (sort_timer.milliseconds() > sortDelay) {
-                nrBall++;
+                sortState++;
             }
                 break;
             case 2:
@@ -786,16 +797,16 @@ public class TeleOpNou2 extends LinearOpMode {
                     else orderBall[1] = 0;
                     if (orderBall[0] == 1) {
                         revLeft();
-                        nrBall++;
+                        sortState++;
                     } else {
                         revRight();
-                        nrBall++;
+                        sortState++;
                     }
                     sort_timer.reset();
                 }
                 break;
             case 3: if (sort_timer.milliseconds() > sortDelay) {
-                nrBall++;
+                sortState++;
             }
                 break;
             case 4:
@@ -805,7 +816,7 @@ public class TeleOpNou2 extends LinearOpMode {
                     }
                     else orderBall[2] = 0;
 
-                    nrBall++;
+                    sortState++;
                 }
                 break;
             case 5:
@@ -815,7 +826,7 @@ public class TeleOpNou2 extends LinearOpMode {
                 }
                     sort_timer.reset();
                     shootState=0;
-                    nrBall++;
+                sortState++;
                 break;
             case 6:
                 break;
@@ -889,8 +900,9 @@ public class TeleOpNou2 extends LinearOpMode {
                             functionshootstate = 0;
                             shootState++;
                             sort_timer.reset();
+                            sortState=0;
+                            readytoshoot=false;
                         }
-                        nrBall=0;
                     }
                     break;
             }
@@ -1025,19 +1037,6 @@ public class TeleOpNou2 extends LinearOpMode {
         }
     }
 
-
-
-
-    boolean alignRunning = false;
-    boolean aPrev = false;
-    double filteredTx = 0;
-    double lastAlignPower = 0;
-    boolean orientareGata = false;
-    double lastSeenDirection=1;
-    double searchPower = 0.003;
-    boolean search =false;
-
-    ElapsedTime searchTimer = new ElapsedTime();
 
 
 

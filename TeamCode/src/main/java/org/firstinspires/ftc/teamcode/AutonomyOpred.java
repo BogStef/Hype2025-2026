@@ -1,76 +1,91 @@
 
 package org.firstinspires.ftc.teamcode;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLStatus;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.TelemetryManager;
 import com.bylazar.telemetry.PanelsTelemetry;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.pedropathing.geometry.Pose;
 
-@Autonomous(name = "AUTO BUN PT RED", group = "Autonomous")
+@Autonomous(name = "AUTO Far", group = "Autonomous")
 @Configurable // Panels
 public class AutonomyOpred extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
     private int pathState; // Current autonomous path state (state machine)
     private Paths paths; // Paths defined in the Paths class
-    private ElapsedTime waitTimer = new ElapsedTime();
-    private ElapsedTime shootTimer = new ElapsedTime();
-    private ElapsedTime shootTimer_f = new ElapsedTime();
+    public ColorSensor colorsensor;
+    public DistanceSensor rangeSensor;
 
-    public final double revpos1=0.2;
-    public final double revpos2=0.56;
-    public final double revpos3 = 0.94;
+    public final double revpos1=0.00;
+    public final double revpos2=0.37;
+    public final double revpos3 = 0.76;
 
-    public DcMotor intake_up;
-    public DcMotor intake_down;
+    public DcMotor intake;
+    public Limelight3A limelight;
 
     public Servo push_tun;
     public Servo rev;
+    public DcMotorEx tun1;
+    public DcMotorEx tun2;
+    public double vitTun = 0;
+    public double vitTun2 = 0;
 
-    public CRServo improvizatie_intake;
-    public boolean pass_intake;
-    public DcMotor tun1;
-    public DcMotor tun2;
-    boolean shooting = false;
+    int shootState=-1;
+
     @Override
     public void init() {
         panelsTelemetry = PanelsTelemetry.INSTANCE.getTelemetry();
 
-        tun1 = hardwareMap.get(DcMotor.class, "tun1");
-        tun2 = hardwareMap.get(DcMotor.class, "tun2");
+        tun1 = hardwareMap.get(DcMotorEx.class, "tun1");
+        tun2 = hardwareMap.get(DcMotorEx.class, "tun2");
         tun1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         tun2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         tun1.setDirection(DcMotor.Direction.REVERSE);
 
-        intake_up = hardwareMap.get(DcMotor.class, "intake_up");///intake
-        intake_down = hardwareMap.get(DcMotor.class, "intake_down");
-        intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        intake_up.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        intake_up.setDirection(DcMotor.Direction.REVERSE);
-        intake_down.setDirection(DcMotor.Direction.REVERSE);
-
+        intake = hardwareMap.get(DcMotor.class,"intake");
         push_tun = hardwareMap.get(Servo.class,"push_tun");
         rev = hardwareMap.get(Servo.class,"rev");
-        improvizatie_intake = hardwareMap.get(CRServo.class,"improvizatie_intake");
-
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));
+        follower.setStartingPose(new Pose(81.54, 9, Math.toRadians(90)));
 
         paths = new Paths(follower); // Build paths
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
         pathState = 0;
+
+        limelight = hardwareMap.get(Limelight3A.class, "Ethernet Device");///camera
+        limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
+        limelight.start(); // This tells Limelight to start looking!
+        limelight.pipelineSwitch(0);
+
+        /*
+            sort = !sort;    ///sort in intake
+            sortState=0;
+            sort_timer.reset();
+
+
+
+         */
+
     }
 
     @Override
@@ -85,14 +100,19 @@ public class AutonomyOpred extends OpMode {
         panelsTelemetry.debug("Heading", follower.getPose().getHeading());
         panelsTelemetry.update(telemetry);
 
-        intake_up.setPower(1);
-        intake_down.setPower(1);
-        improvizatie_intake.setPower(.6);
+        distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
 
-        tun1.setPower(1);
-        tun2.setPower(1);
-
-        shoot();
+        calculateTrueTa();
+        double const1 = 310, const2 = 900;
+        if(trueTa!=0){
+            vitTun = const1/trueTa + const2;
+            vitTun2 = const1/trueTa +const2+300;
+        }
+        else {
+            vitTun = const2;
+            vitTun2 = const2+670;
+        }
+        tun(vitTun,vitTun2,true);
     }
 
 
@@ -105,132 +125,318 @@ public class AutonomyOpred extends OpMode {
         public Paths(Follower follower) {
             Path1 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(81.546, 9.575),
+                                    new Pose(81.54, 9.04),
 
-                                    new Pose(85.045, 22.877)
+                                    new Pose(82.59, 16.22)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(70))
 
                     .build();
-        }
-    }
+            Path2 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(82.59, 16.22),
 
-    public void revLeft() {
-        double pos = rev.getPosition();
-        double error = 0.01;
+                                    new Pose(95.76, 35.63)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(70), Math.toRadians(180))
 
-        if (Math.abs(pos - revpos1) < error) {
-            rev.setPosition(revpos2);
-        } else if (Math.abs(pos - revpos2) < error) {
-            rev.setPosition(revpos3);
-        } else if (Math.abs(pos - revpos3) < error) {
-            rev.setPosition(revpos1);
-        } else {
-            rev.setPosition(revpos1);
-        }
-    }
-
-    public int shootstate=0;
-    public boolean gata_shoot=false;
-    public void shoot3bile(){
-        switch(shootstate){
-            case 0: shooting=true;
-                    functionshootstate=0;
-                    shootstate++;
-                    break;
-            case 1: shootTimer.reset();
-                    shooting=false;
-                    shootstate++;
-                    break;
-            case 2: if(shootTimer.milliseconds()>1000){
-                    revLeft();
-                    shootstate++;}
-                break;
-            case 3:shootTimer.reset();
-                    shootstate++;
-                    break;
-            case 4:if(shootTimer.milliseconds()>1000){
-                    shooting=true;
-                    functionshootstate=0;
-                    shootstate++;
-            }
-            break;
-            case 5:  shootTimer.reset();
-                    shooting=false;
-                    shootstate++;
-                    break;
-            case 6: if(shootTimer.milliseconds()>1000){
-                    revLeft();
-                    shootstate++;
-            }
-            break;
-
-            case 7:shooting=true;
-                    functionshootstate=0;
-                    shootTimer.reset();
-                    shootstate++;
-                    break;
-            case 8: if(shootTimer.milliseconds()>1000){
-                    shooting=false;
-                    gata_shoot=true;
-            }
-
-
+                    .build();
 
         }
     }
 
-    public int functionshootstate=0;
-    public void shoot() {
-        if(!shooting) return;
 
-        switch(functionshootstate){
-            case 0:
-                shootTimer_f.reset();
-                push_tun.setPosition(.50);
-                functionshootstate = 1;
-                break;
 
-            case 1:
-                if(shootTimer_f.milliseconds() > 200){
-                    push_tun.setPosition(.28);
-                    functionshootstate = 2;
-                }
-                break;
-
-            case 2:
-                // gata, așteaptă reset extern
-                break;
-        }
-    }
+    ElapsedTime pathtime = new ElapsedTime();
     public int autonomousPathUpdate() {
         switch (pathState) {
 
             case 0:
                 follower.followPath(paths.Path1);
                 pathState = 1;
+                pathtime.reset();
                 break;
 
-            case 1: // Așteaptă să termine Path1
-                if (!follower.isBusy()) {
-                    waitTimer.reset();
+            case 1:
+                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                    follower.followPath(paths.Path2);
                     pathState = 2;
+                    pathtime.reset();
                 }
                 break;
-
-            case 2: // Pauză 1 secundă +shooting
-                    if(!gata_shoot)
-                        shoot3bile();
-                    if(gata_shoot)
-                        pathState = 3;
-
-                break;
-            case 3:
-                // Gata autonomous
+            case 2:
                 break;
         }
 
         return pathState;
+    }
+
+    public int sortState = 0;
+    ElapsedTime sort_timer = new ElapsedTime();
+    int sortDelay = 350;
+    public int [] orderBall = {0 , 0 , 0};
+    public boolean readytoshoot = false;
+
+    public double distanceCM=0;
+    public double distanta_proxsensorCM=6.7;//real = 13.3
+
+    public int[] neededOrder = {0,0,0};//0 - purple, 1 - green
+    boolean storageShooting = false; // new flag to indicate storage-controlled shooting
+    public void storage_sort(){
+        /*
+        toate valorile ajung in array care il folosim la final
+        prima minge buna = revLeft
+        prima minge rea = rev right
+        daca prima minge buna atunci a doua minge revleft
+        altfel daca prima minge rea rev right (verificam culoare)
+        la final mingea buna in tun
+        verificam care ii urm buna (ori intake ori storage) si in functie de asta rev right x 2 sau ref left x2
+         */
+        switch(sortState) {
+            case 0:
+                if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
+                    if (getColor() == neededOrder[0]) {
+                        revLeft();
+                        orderBall[0] = 1;
+                        sortState++;
+                    } else {
+                        revRight();
+                        orderBall[0] = 0;
+                        sortState++;
+                    }
+                    sort_timer.reset();
+                }
+                break;
+            case 1: if (sort_timer.milliseconds() > sortDelay) {
+                sortState++;
+            }
+                break;
+            case 2:
+                if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
+                    if (getColor() == neededOrder[1]) {
+                        orderBall[1] = 1;
+                    }
+                    else orderBall[1] = 0;
+                    if (orderBall[0] == 1) {
+                        revLeft();
+                        sortState++;
+                    } else {
+                        revRight();
+                        sortState++;
+                    }
+                    sort_timer.reset();
+                }
+                break;
+            case 3: if (sort_timer.milliseconds() > sortDelay) {
+                sortState++;
+            }
+                break;
+            case 4:
+                if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
+                    if (getColor() == neededOrder[2]) {
+                        orderBall[2] = 1;
+                    }
+                    else orderBall[2] = 0;
+
+                    sortState++;
+                }
+                break;
+            case 5:
+                if (orderBall[0] == 0 || orderBall[1] == 0 || orderBall[2] == 0) {
+                    if (orderBall[2] == neededOrder[0])
+                        revRight();
+                }
+                sort_timer.reset();
+                shootState=0;
+                sortState++;
+                break;
+            case 6:
+                break;
+        }
+        if (readytoshoot) {
+
+            switch (shootState) {
+
+                case 0:
+                    if (sort_timer.milliseconds() > sortDelay) {
+                        if (!storageShooting) {
+                            storageShooting = true;
+                            shooting = true;
+                            shoot();
+                        }
+                        if (functionshootstate == 2) {
+                            shooting = false;
+                            storageShooting = false;
+                            functionshootstate = 0;
+                            shootState++;
+                            sort_timer.reset();
+                        }
+                    }
+                    break;
+
+                case 1:
+                    if (sort_timer.milliseconds() > sortDelay) {
+                        if (getColor() == neededOrder[1]) revRight();
+                        else revLeft();
+                        sort_timer.reset();
+                        shootState = 2;
+                    }
+                    break;
+
+                case 2:
+                    if (sort_timer.milliseconds() > sortDelay) {
+                        if (!storageShooting) {
+                            storageShooting = true;
+                            shooting = true;
+                            shoot();
+                        }
+                        if (functionshootstate == 2) {
+                            shooting = false;
+                            storageShooting = false;
+                            functionshootstate = 0;
+                            shootState++;
+                            sort_timer.reset();
+                        }
+                    }
+                    break;
+
+                case 3:
+                    if (sort_timer.milliseconds() > sortDelay) {
+                        if (getColor() != -1) revRight();
+                        else revLeft();
+                        sort_timer.reset();
+                        shootState = 4;
+                    }
+                    break;
+
+                case 4:
+                    if (sort_timer.milliseconds() > sortDelay) {
+                        if (!storageShooting) {
+                            storageShooting = true;
+                            shooting = true;
+                            shoot();
+                        }
+                        if (functionshootstate == 2) {
+                            shooting = false;
+                            storageShooting = false;
+                            functionshootstate = 0;
+                            shootState++;
+                            sort_timer.reset();
+                            sortState=0;
+                            readytoshoot=false;
+                        }
+                    }
+                    break;
+            }
+        }
+
+    }
+    public int functionshootstate=0;
+    ElapsedTime shootTimer = new ElapsedTime();
+    boolean shooting = false;
+
+    public void shoot() {
+        if(!shooting) return;
+
+        switch(functionshootstate){
+            case 0: // start shoot
+                push_tun.setPosition(0); // retract
+                shootTimer.reset();       // reset timer once
+                functionshootstate = 1;
+                break;
+
+            case 1: // extend after 200ms
+                if(shootTimer.milliseconds() > 200){
+                    push_tun.setPosition(0.75); // extend
+                    functionshootstate = 2;
+                }
+                break;
+
+            case 2: // done, wait for external reset
+                break;
+        }
+    }
+
+
+    public int getColor() { /// 0==mov 1==green
+        double red, blue, green, alpha;
+        double error;
+        error = 120;
+        red = colorsensor.red();
+        blue = colorsensor.blue();
+        green = colorsensor.green();
+        alpha = colorsensor.alpha();
+
+        if(green>95&&green>blue&&green>red){
+            return 1;
+        }
+        if(red>green||blue>green)
+            return 0;
+
+        return -1;
+
+    }
+
+    public void revLeft() {
+        double err = 0.01;
+        double current = rev.getPosition();
+
+        if (Math.abs(current - revpos1) < err) {
+            rev.setPosition(revpos2);
+        }
+        else if (Math.abs(current - revpos2) < err) {
+            rev.setPosition(revpos3);
+        }
+        else if (Math.abs(current - revpos3) < err) {
+            rev.setPosition(revpos1);
+        }
+        else {
+            // Default if position doesn't match any
+            rev.setPosition(revpos1);
+        }
+    }
+
+    public void revRight(){
+        double err = 0.01;
+        double current = rev.getPosition();
+
+        if (Math.abs(current - revpos1) < err) {
+            rev.setPosition(revpos3);
+        }
+        else if (Math.abs(current - revpos2) < err) {
+            rev.setPosition(revpos1);
+        }
+        else if (Math.abs(current - revpos3) < err) {
+            rev.setPosition(revpos2);
+        }
+        else {
+            // Default if position doesn't match any
+            rev.setPosition(revpos1);
+        }
+    }
+    double trueTa = 0;
+    public void calculateTrueTa() {
+        double ta = 0.00;
+
+        LLResult result = limelight.getLatestResult();
+        if (result != null && result.isValid()) {
+            ta = result.getTa();
+        }
+        else ta=0;
+        trueTa=ta; // ne folosim numai de ta pt ca la zalau vom trage numa de pe linie ca urmare unghiul nu ne fut
+    }
+
+
+    void tun(double v1,double v2,boolean toggle_tun) {
+        if (toggle_tun) {
+            tun1.setVelocity(v1);
+            tun2.setVelocity(v2);
+        } else {
+            tun1.setVelocity(0);
+            tun2.setVelocity(0);
+        }
+
+        telemetry.addData("vit:",vitTun);
     }
 
 
