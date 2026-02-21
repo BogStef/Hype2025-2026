@@ -78,6 +78,8 @@ public class TeleOpNou2 extends LinearOpMode {
     public final double revpos2=0.37;
     public final double revpos3 = 0.76;
 
+    public final double revposAlter = 0.056;
+
 
 
     public final double vmax = 0.7;
@@ -130,6 +132,7 @@ public class TeleOpNou2 extends LinearOpMode {
         initialize();
         telemetry.update();
         waitForStart();
+        imu.resetYaw();
 
 
         if (opModeIsActive()) {
@@ -265,7 +268,7 @@ public class TeleOpNou2 extends LinearOpMode {
         drspa.setPower(drspapwr*maxspeed);
     }
 
-    double kP = 0.04;
+    double kP = 0.0067;
     double error = 0;
     double lastError = 0;
     double angleTolerance = .5;
@@ -338,18 +341,18 @@ public class TeleOpNou2 extends LinearOpMode {
 
         if(starerun){ ///toggle field centric drive
 
-            double tempSpeed  = speed * Math.cos(-heading) + strafe * Math.sin(-heading);
-            double tempStrafe = -speed * Math.sin(-heading) + strafe * Math.cos(-heading);
+            double tempStrafe = strafe * Math.cos(heading) + speed * Math.sin(heading);
+            double tempSpeed = -strafe * Math.sin(heading) + speed * Math.cos(heading);
 
             speed  = tempSpeed;
             strafe = tempStrafe;
             telemetry.addData("gyro", starerun);
         }
         if(gamepad1.right_trigger>0.2){
-            drive(speed,turn,strafe,maxspeed+0.2);
+            drive(speed,turn,strafe,maxspeed+0.3);
         }
         else if(gamepad1.left_trigger<0.2)
-            drive(speed,turn,strafe,maxspeed);
+           drive(speed,turn,strafe,maxspeed);
 
 
 
@@ -416,26 +419,27 @@ public class TeleOpNou2 extends LinearOpMode {
         boolean curBumper = gamepad2.left_bumper;
         if (curBumper && !lastBumper) readytoshoot= !readytoshoot;
         lastBumper = curBumper;
+
         if (sort) storage_sort();
 
 
 
         /// ORIENTARE
         // driver 1 apasa pe left trigger
-        allign(0);
+        allign(-2);
         ////////////////
 
 
         calculateTrueTa();
         calculateTrueTx();
-        double const1 = 310, const2 = 900;
+        double const1 = 175, const2 = 650;
         if(trueTa!=0){
             vitTun = const1/trueTa + const2;
             vitTun2 = const1/trueTa +const2+300;
         }
         else {
             vitTun = const2;
-            vitTun2 = const2+670;
+            vitTun2 = const2+500;
         }
 
         telemetry.addData("vittun",vitTun);
@@ -531,6 +535,7 @@ public class TeleOpNou2 extends LinearOpMode {
     boolean toggle_intake = false;
     boolean currenttriangle = false;
     boolean lasttriangle = false;
+    boolean toggle_intake_reverse;
     ElapsedTime IntakeTimer = new ElapsedTime();
 
     void intake(double vit) {
@@ -545,25 +550,30 @@ public class TeleOpNou2 extends LinearOpMode {
         }
         lasttriangle = currenttriangle;
 
+        if(gamepad2.crossWasPressed()){
+            toggle_intake_reverse = !toggle_intake_reverse;
+        }
+
+
         // pornire motor intake
         if (toggle_intake) {
+            if (!toggle_intake_reverse)
             intake.setPower(vit);
+            else intake.setPower(-vit);
+
         } else {
             intake.setPower(0);
         }
-
         // detectare bila
         if (!sort) {
             distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
             ballDetected = distanceCM < distanta_proxsensorCM;
 
-            if (ballDetected && !lastBallDetected && ballCount < 2 && IntakeTimer.milliseconds() > 300) {
+            if (ballDetected && !lastBallDetected && ballCount < 2 && IntakeTimer.milliseconds() > 400) {
                 revLeft();   // muta revolver o poziție
+                gamepad2.rumble(600);
                 ballCount++;
                 IntakeTimer.reset();
-            }
-            if (ballCount >= 2 && toggle_intake) {
-                intake.setPower(.8 * vit);
             }
 
             lastBallDetected = ballDetected;
@@ -661,42 +671,36 @@ public class TeleOpNou2 extends LinearOpMode {
                 revBusy = true;
             }
         }*/
-
+    //TODO refacut co poziti exacte pentru cele cu - revposAlter
     public void revLeft() {
         double err = 0.01;
         double current = rev.getPosition();
-
-        if (Math.abs(current - revpos1) < err) {
-            rev.setPosition(revpos2);
-        }
-        else if (Math.abs(current - revpos2) < err) {
-            rev.setPosition(revpos3);
-        }
-        else if (Math.abs(current - revpos3) < err) {
-            rev.setPosition(revpos1);
-        }
-        else {
-            // Default if position doesn't match any
-            rev.setPosition(revpos1);
-        }
+    if (Math.abs(current - revpos1) < err) {
+        rev.setPosition(revpos2);
+    } else if (Math.abs(current - revpos2) < err) {
+        rev.setPosition(revpos3);
+    } else if (Math.abs(current - revpos3) < err) {
+        rev.setPosition(revpos1);
+    } else {
+        // Default if position doesn't match any
+        rev.setPosition(revpos1);
     }
 
-    public void revRight(){
+    }
+
+    public void revRight() {
         double err = 0.01;
         double current = rev.getPosition();
-
         if (Math.abs(current - revpos1) < err) {
             rev.setPosition(revpos3);
-        }
-        else if (Math.abs(current - revpos2) < err) {
+        } else if (Math.abs(current - revpos2) < err) {
             rev.setPosition(revpos1);
-        }
-        else if (Math.abs(current - revpos3) < err) {
+        } else if (Math.abs(current - revpos3) < err) {
             rev.setPosition(revpos2);
-        }
-        else {
+        } else {
             // Default if position doesn't match any
             rev.setPosition(revpos1);
+
         }
     }
         /*public void old_revRight() {
@@ -744,7 +748,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
             case 1: // extend after 200ms
                 if(shootTimer.milliseconds() > 200){
-                    push_tun.setPosition(0.75); // extend
+                    push_tun.setPosition(0.80); // extend
                     functionshootstate = 2;
                 }
                 break;
@@ -767,7 +771,8 @@ public class TeleOpNou2 extends LinearOpMode {
         prima minge rea = rev right
         daca prima minge buna atunci a doua minge revleft
         altfel daca prima minge rea rev right (verificam culoare)
-        la final mingea buna in tun
+        la final mingea buna in tun // trebuie verificat prin a schimba valorile din orderBall cu culorile, nu daca se alineaza cu motiful
+        trebuie verificat daca trebuie rev left sau rev right ca mingea buna sa fie in tun si nustiu cum
         verificam care ii urm buna (ori intake ori storage) si in functie de asta rev right x 2 sau ref left x2
          */
         switch(sortState) {
@@ -785,37 +790,52 @@ public class TeleOpNou2 extends LinearOpMode {
                     sort_timer.reset();
                 }
                 break;
-            case 1: if (sort_timer.milliseconds() > sortDelay) {
-                sortState++;
-            }
+            case 1:
+                if (sort_timer.milliseconds() > sortDelay) {
+                    sortState++;
+                }
                 break;
             case 2:
                 if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
                     if (getColor() == neededOrder[1]) {
                         orderBall[1] = 1;
-                    }
-                    else orderBall[1] = 0;
+                    } else orderBall[1] = 0;
                     if (orderBall[0] == 1) {
                         revLeft();
                         sortState++;
+                        // prima bila in tun
                     } else {
                         revRight();
                         sortState++;
+                        // a doua bila in tun
                     }
                     sort_timer.reset();
                 }
                 break;
-            case 3: if (sort_timer.milliseconds() > sortDelay) {
-                sortState++;
-            }
+            case 3:
+                if (sort_timer.milliseconds() > sortDelay) {
+                    sortState++;
+                }
                 break;
             case 4:
                 if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
+                    if (orderBall[0] == 0 && orderBall[1] == 0) {
+                        revRight();
+                        sort_timer.reset();
+                    }
+                    shootState = 0;
+                    sortState++;
+                }
+                break;
+
+        }
+        //if(sortState == 5) sortState = 0;
+          /*   case 4:
+               if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
                     if (getColor() == neededOrder[2]) {
                         orderBall[2] = 1;
                     }
                     else orderBall[2] = 0;
-
                     sortState++;
                 }
                 break;
@@ -829,8 +849,8 @@ public class TeleOpNou2 extends LinearOpMode {
                 sortState++;
                 break;
             case 6:
-                break;
-        }
+                break;*/
+
         if (readytoshoot) {
 
             switch (shootState) {

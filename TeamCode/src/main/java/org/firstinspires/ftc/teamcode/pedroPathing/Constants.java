@@ -27,15 +27,15 @@ public class Constants {
                     .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
                     .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
                     .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
-                    .maxPower(.45)
                     .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD);
 
     public static OTOSConstants localizerConstants = new OTOSConstants()
             .hardwareMapName("otos")
-            .offset(new SparkFunOTOS.Pose2D(27.164,110.206,Math.PI/2)) //todo test offset
+            .offset(new SparkFunOTOS.Pose2D(1.069,-4.339,Math.PI)) //todo test offset
             .linearUnit(DistanceUnit.INCH)
             .angleUnit(AngleUnit.RADIANS)
-            .linearScalar(-0.985)/// LASA PE -0.985 (minimu,n  nl pe care il aveam era 0.97 si max era sub 1
+
+            .linearScalar(0.985)/// LASA PE -0.985 (minimu,n  nl pe care il aveam era 0.97 si max era sub 1
             .angularScalar(1);///LASA PE 1
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);

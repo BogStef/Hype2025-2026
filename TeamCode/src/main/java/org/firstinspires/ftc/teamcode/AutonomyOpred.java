@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.bylazar.configurables.annotations.Configurable;
@@ -20,6 +21,7 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.pedropathing.geometry.Pose;
@@ -77,6 +79,44 @@ public class AutonomyOpred extends OpMode {
         limelight.start(); // This tells Limelight to start looking!
         limelight.pipelineSwitch(0);
 
+//        stspa.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        stft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        drspa.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        drft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
+
+        tun1 = hardwareMap.get(DcMotorEx.class, "tun1");
+        tun2 = hardwareMap.get(DcMotorEx.class, "tun2");
+        tun1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        tun2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        tun1.setDirection(DcMotor.Direction.REVERSE);
+        tun1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        tun2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        //intake_up = hardwareMap.get(DcMotor.class, "intake_up");///intake
+        intake = hardwareMap.get(DcMotor.class, "intake");
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+
+        limelight = hardwareMap.get(Limelight3A.class, "Ethernet Device");///camera
+        limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
+        limelight.start(); // This tells Limelight to start looking!
+        limelight.pipelineSwitch(0);
+
+
+        colorsensor = hardwareMap.get(ColorSensor.class, "colorsensor");
+
+
+        push_tun = hardwareMap.get(Servo.class,"push_tun");
+        push_tun.setDirection(Servo.Direction.REVERSE);
+        rev = hardwareMap.servo.get("rev");
+
+        follower = Constants.createFollower(hardwareMap);
+        follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));///todo
+
+        rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
+
+
         /*
             sort = !sort;    ///sort in intake
             sortState=0;
@@ -125,21 +165,29 @@ public class AutonomyOpred extends OpMode {
         public Paths(Follower follower) {
             Path1 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(81.54, 9.04),
+                                    new Pose(85.57, 14.76),
 
-                                    new Pose(82.59, 16.22)
+                                    new Pose(86.58, 17.80)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(70))
+                    ).setLinearHeadingInterpolation(1.49, 1.159)
 
                     .build();
             Path2 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(82.59, 16.22),
+                                    new Pose(86.58, 17.80),
 
-                                    new Pose(95.76, 35.63)
+                                    new Pose(98.360, 42.91)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(70), Math.toRadians(180))
+                    ).setLinearHeadingInterpolation(1.159, 3.13)
 
+                    .build();
+            Path3 = follower.pathBuilder().addPath(
+                    new BezierLine(
+                            new Pose(98.360,42.91),
+
+                            new Pose(128.20,41.55)
+                    )
+            ).setLinearHeadingInterpolation(3.13,3.13)
                     .build();
 
         }
@@ -165,6 +213,12 @@ public class AutonomyOpred extends OpMode {
                 }
                 break;
             case 2:
+                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                    follower.followPath(paths.Path3);
+                    pathState=3;
+                    pathtime.reset();
+                }
+            case 3:
                 break;
         }
 
