@@ -432,7 +432,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
         calculateTrueTa();
         calculateTrueTx();
-        double const1 = 175, const2 = 650;
+        double const1 = 150, const2 = 700;
         if(trueTa!=0){
             vitTun = const1/trueTa + const2;
             vitTun2 = const1/trueTa +const2+300;
