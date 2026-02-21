@@ -66,7 +66,7 @@ public class AutonomyOpred extends OpMode {
         push_tun = hardwareMap.get(Servo.class,"push_tun");
         rev = hardwareMap.get(Servo.class,"rev");
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(81.54, 9, Math.toRadians(90)));
+        follower.setStartingPose(new Pose(85.57, 14.76, Math.toRadians(90)));
 
         paths = new Paths(follower); // Build paths
 
@@ -112,7 +112,7 @@ public class AutonomyOpred extends OpMode {
         rev = hardwareMap.servo.get("rev");
 
         follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(new Pose(72, 8, Math.toRadians(90)));///todo
+        follower.setStartingPose(new Pose(85.57, 14.76, 1.49));
 
         rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
 

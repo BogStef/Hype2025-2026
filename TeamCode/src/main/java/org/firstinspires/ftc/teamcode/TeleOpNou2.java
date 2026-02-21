@@ -762,8 +762,10 @@ public class TeleOpNou2 extends LinearOpMode {
     public int sortState = 0;
     ElapsedTime sort_timer = new ElapsedTime();
     int sortDelay = 350;
+    int intun = -1;
     public int [] orderBall = {0 , 0 , 0};
     public boolean readytoshoot = false;
+    int rumbleTime = 400;
     public void storage_sort(){
         /*
         toate valorile ajung in array care il folosim la final
@@ -778,7 +780,12 @@ public class TeleOpNou2 extends LinearOpMode {
         switch(sortState) {
             case 0:
                 if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
+                    if (getColor() == 0) {
+                        gamepad2.rumble(rumbleTime);
+                    } else gamepad2.rumble(rumbleTime*2);
+                    //////
                     if (getColor() == neededOrder[0]) {
+                        intun = getColor();
                         revLeft();
                         orderBall[0] = 1;
                         sortState++;
@@ -797,6 +804,10 @@ public class TeleOpNou2 extends LinearOpMode {
                 break;
             case 2:
                 if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
+                    if (getColor() == 0) {
+                        gamepad2.rumble(rumbleTime);
+                    } else gamepad2.rumble(rumbleTime*2);
+                    //////
                     if (getColor() == neededOrder[1]) {
                         orderBall[1] = 1;
                     } else orderBall[1] = 0;
@@ -805,6 +816,7 @@ public class TeleOpNou2 extends LinearOpMode {
                         sortState++;
                         // prima bila in tun
                     } else {
+                        intun = getColor();
                         revRight();
                         sortState++;
                         // a doua bila in tun
@@ -819,8 +831,19 @@ public class TeleOpNou2 extends LinearOpMode {
                 break;
             case 4:
                 if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
-                    if (orderBall[0] == 0 && orderBall[1] == 0) {
+                    if (getColor() == 0) {
+                        gamepad2.rumble(rumbleTime);
+                    } else gamepad2.rumble(rumbleTime*2);
+                    //////
+                    if (intun == neededOrder[0]) {
+                        //nu se intampla nimic deoarec ii buna
+                    }
+                    else if (getColor() == neededOrder[0]) { //mingea din intake merge in tun daca ii buna si aia din tun nu
                         revRight();
+                        sort_timer.reset();
+                    }
+                    else { // mingea din storage merge in tun daca celelalte 2 nu sunt bune
+                        revLeft();
                         sort_timer.reset();
                     }
                     shootState = 0;
@@ -829,27 +852,7 @@ public class TeleOpNou2 extends LinearOpMode {
                 break;
 
         }
-        //if(sortState == 5) sortState = 0;
-          /*   case 4:
-               if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
-                    if (getColor() == neededOrder[2]) {
-                        orderBall[2] = 1;
-                    }
-                    else orderBall[2] = 0;
-                    sortState++;
-                }
-                break;
-            case 5:
-                if (orderBall[0] == 0 || orderBall[1] == 0 || orderBall[2] == 0) {
-                    if (orderBall[2] == neededOrder[0])
-                        revRight();
-                }
-                    sort_timer.reset();
-                    shootState=0;
-                sortState++;
-                break;
-            case 6:
-                break;*/
+
 
         if (readytoshoot) {
 
@@ -867,13 +870,13 @@ public class TeleOpNou2 extends LinearOpMode {
                             storageShooting = false;
                             functionshootstate = 0;
                             shootState++;
-                            sort_timer.reset();
+                            shootTimer.reset();
                         }
                     }
                     break;
 
                 case 1:
-                    if (sort_timer.milliseconds() > sortDelay) {
+                    if (shootTimer.milliseconds() > shootDelay) {
                         if (getColor() == neededOrder[1]) revRight();
                         else revLeft();
                         sort_timer.reset();
@@ -893,13 +896,13 @@ public class TeleOpNou2 extends LinearOpMode {
                             storageShooting = false;
                             functionshootstate = 0;
                             shootState++;
-                            sort_timer.reset();
+                            shootTimer.reset();
                         }
                     }
                     break;
 
                 case 3:
-                    if (sort_timer.milliseconds() > sortDelay) {
+                    if (shootTimer.milliseconds() > shootDelay) {
                         if (getColor() != -1) revRight();
                         else revLeft();
                         sort_timer.reset();
@@ -919,7 +922,6 @@ public class TeleOpNou2 extends LinearOpMode {
                             storageShooting = false;
                             functionshootstate = 0;
                             shootState++;
-                            sort_timer.reset();
                             sortState=0;
                             readytoshoot=false;
                         }
