@@ -17,21 +17,24 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(8.67);
+            .mass(50);
     public static MecanumConstants driveConstants = new MecanumConstants()
-                    .maxPower(0.5) //TODO
-                    .rightFrontMotorName("drft")
-                    .rightRearMotorName("drspa")
-                    .leftRearMotorName("stspa")
-                    .leftFrontMotorName("stft")
-                    .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
-                    .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
-                    .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
-                    .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD);
+            .maxPower(0.1) //TODO
+            .rightFrontMotorName("drft")
+            .rightRearMotorName("drspa")
+            .leftRearMotorName("stspa")
+            .leftFrontMotorName("stft")
+
+
+            .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
+            .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
+
+            .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
+            .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD);
 
     public static OTOSConstants localizerConstants = new OTOSConstants()
             .hardwareMapName("otos")
-            .offset(new SparkFunOTOS.Pose2D(1.069,-4.339,Math.PI)) //todo test offset
+            .offset(new SparkFunOTOS.Pose2D(1.069,-4.339,0)) //todo test offset
             .linearUnit(DistanceUnit.INCH)
             .angleUnit(AngleUnit.RADIANS)
 

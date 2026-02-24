@@ -22,7 +22,7 @@ public class ProiectVlad extends LinearOpMode {
         timp = timer.seconds();
         if(opModeIsActive())
         {
-            while(timer.seconds() - timp < 0.5){
+            while(timer.seconds() - timp < 0.6){
                 stft.setPower(1);
                 drft.setPower(1);
                 stspa.setPower(1);
