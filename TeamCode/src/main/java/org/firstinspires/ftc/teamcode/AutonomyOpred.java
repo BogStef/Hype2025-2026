@@ -118,8 +118,49 @@ public class AutonomyOpred extends OpMode {
         rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
 
     }
+    boolean ballDetected;
+    boolean lastBallDetected;
+    int ballCount = 0;
+    boolean intakeSort = false;
+    boolean secondRevLeft = false;
+    boolean thirdRevRight = false;
+    ElapsedTime IntakeTimer = new ElapsedTime();
     void intake(){
         intake.setPower(.4);
+        if (intakeSort) {
+            distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
+            ballDetected = distanceCM < distanta_proxsensorCM;
+
+            if (ballDetected && !lastBallDetected && ballCount < 3 && IntakeTimer.milliseconds() > 800 && getColor() != -1) {
+                if (ballCount == 0) {
+                    if (getColor()==2) {
+                        revLeft();
+                        secondRevLeft = true;
+                    }
+                    else {
+                        revRight();
+                        secondRevLeft = false;
+                    }
+                }
+                else if (ballCount == 1) {
+                    if (secondRevLeft) {
+                        revLeft();
+                    }
+                    else {
+                        if (getColor() == 1) {
+                            thirdRevRight = true;
+                        }
+                        else thirdRevRight = false;
+                        revRight();
+
+                    }
+                }
+                else if (ballCount == 2 && thirdRevRight) revRight();
+                ballCount++;
+                IntakeTimer.reset();
+            }
+            lastBallDetected = ballDetected;
+        }
     }
     double distanceCM =0;
 
@@ -508,12 +549,12 @@ public class AutonomyOpred extends OpMode {
         alpha = colorsensor.alpha();
 
         if(green>95&&green>blue&&green>red){
-            return 1;
+            return 2;
         }
         if(red>green||blue>green)
-            return 0;
+            return 1;
 
-        return -1;
+        return 0;
 
     }
 
