@@ -258,6 +258,8 @@ public class AutonomyOpred extends OpMode {
         public PathChain Path3;
         public PathChain Path4;
         public PathChain Path5;
+        public PathChain Path6;
+        public PathChain Path7;
 
 
         public Paths(Follower follower) {
@@ -275,7 +277,7 @@ public class AutonomyOpred extends OpMode {
                     .addPath(
                             new BezierLine(
                                     new Pose(85.507, 10),
-                                    new Pose(87.183, 35.795)
+                                        new Pose(87.183, 35.795)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(253), Math.toRadians(0))
@@ -300,17 +302,38 @@ public class AutonomyOpred extends OpMode {
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(253))
                     .build();
-            Path5 = follower.pathBuilder()
-                    .addPath(
+            Path5 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(85.210,18.090),
-                                    new Pose(109.1,36)
+                                    new Pose(85.210, 18.000),
+
+                                    new Pose(87.183, 56.500)
                             )
-                    )
-                    .setLinearHeadingInterpolation(Math.toRadians(245),Math.toRadians(0))
+                    ).setLinearHeadingInterpolation(Math.toRadians(253), Math.toRadians(0))
+
+                    .build();
+
+            Path6 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(87.183, 56.500),
+
+                                    new Pose(105.000, 62.100)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
+
+                    .build();
+
+            Path7 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(105.000, 62.100),
+
+                                    new Pose(85.210, 10.000)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(253))
+
                     .build();
         }
     }
+
     int revDelay =1000;
     public double distanta_proxsensorCM=6.7;
     boolean startingPosition = true;
@@ -376,27 +399,27 @@ public class AutonomyOpred extends OpMode {
 
             case 0: /// pozitie de tras
                 follower.followPath(paths.Path1);
-                nr_ball = 0;
-                sort_bgd_gata=false;
-                bgdtimer.reset();
-                if (startingPosition) {
-                    rev.setPosition(revpos1);
-                    startingPosition=false;
-                }
+//                nr_ball = 0;
+//                sort_bgd_gata=false;
+//                bgdtimer.reset();
+//                if (startingPosition) {
+//                    rev.setPosition(revpos1);
+//                    startingPosition=false;
+//                }
                 pathtime.reset();
                 pathState = 1;
 
                 break;
             case 1: ///sorteaza si trage
                 if(pathtime.milliseconds()>500&&!follower.isBusy()){
-                    if(!sort_bgd_gata){
-                        sort_bgd(3000);
-                        telemetry.addLine("bgdsorting type shi");
-                    }
-                    if(sort_bgd_gata){
+//                    if(!sort_bgd_gata){
+//                        sort_bgd(3000);
+//                        telemetry.addLine("bgdsorting type shi");
+//                    }
+//                    if(sort_bgd_gata){
                         pathtime.reset();
                         pathState++;
-                    }
+//                    }
 
                 }
                 break;
@@ -426,7 +449,6 @@ public class AutonomyOpred extends OpMode {
             case 5:
                     if(pathtime.milliseconds()>4000&&!follower.isBusy()){
                         pathState = 6;
-
                         pathtime.reset();
                     }
                 break;
@@ -436,15 +458,27 @@ public class AutonomyOpred extends OpMode {
                         pathtime.reset();
                     }
                 break;
-            case 7:
+            case 7:/// merge la pozitia de luat mingi 2
                 if(pathtime.milliseconds()>2000&&!follower.isBusy()){
                     follower.followPath(paths.Path5);
                     pathState = 8;
+                    pathtime.reset();
                 }
                 break;
-            case 8:
+            case 8:if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                follower.followPath(paths.Path6);
+                pathState = 9;
+                pathtime.reset();
+            }
                 break;
-
+            case 9:if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                follower.followPath(paths.Path5);
+                pathState = 10;
+                pathtime.reset();
+            }
+                break;
+            case 10:
+                break;
         }
 
         return pathState;
