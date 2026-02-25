@@ -184,9 +184,9 @@ public class AutonomyOpred extends OpMode {
         if (motif_code == -1)
             motif_code = motif(); //cauta motif
         calculateTrueTa();
-        double const2 = 1000;
+        double const2 = 950;
         vitTun = const2;
-        vitTun2 = const2+1100;
+        vitTun2 = const2+1500;
 
         tun(vitTun,vitTun2,true);
         intake();
@@ -239,9 +239,6 @@ public class AutonomyOpred extends OpMode {
 
             if (id == 21 || id == 22 || id == 23) {
                 motif_code = id;
-                //telemetry.addData("Motif Found", id);
-                //telemetry.update();
-               // neededOrder[id-21] = 2;
                 return id;
 
 
@@ -275,7 +272,7 @@ public class AutonomyOpred extends OpMode {
                     .addPath(
                             new BezierLine(
                                     new Pose(85.507, 10),
-                                    new Pose(87.183, 35.795)
+                                    new Pose(87.183, 37)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(253), Math.toRadians(0))
@@ -284,8 +281,8 @@ public class AutonomyOpred extends OpMode {
             Path3 = follower.pathBuilder()/// poz luat bile
                     .addPath(
                             new BezierLine(
-                                    new Pose(87.183, 35.795),
-                                    new Pose(105.069, 41)
+                                    new Pose(87.183, 37),
+                                    new Pose(115.069, 37)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
@@ -294,7 +291,7 @@ public class AutonomyOpred extends OpMode {
             Path4 = follower.pathBuilder()/// poz tras
                     .addPath(
                             new BezierLine(
-                                    new Pose(105.069, 41),
+                                    new Pose(115.069, 37),
                                     new Pose(85.210, 10)
                             )
                     )
@@ -323,6 +320,22 @@ public class AutonomyOpred extends OpMode {
     ElapsedTime bgdtimer = new ElapsedTime();
     boolean storagebgdShooting = false;
     boolean sort_bgd_gata = false;
+    int nr_revleft = 0;
+    boolean shootanyway = false;
+
+    void sort_bgd_reset(int a,int b,int c){
+
+        storagebgdShooting = false;
+        bgdtimer.reset();
+        sort_bgd_gata = false;
+        nr_revleft = 0;
+        shootanyway=false;
+        nr_ball =0;
+        stor [0] = a;
+        stor[1] = b;
+        stor[2] = c;
+
+    }
     void sort_bgd(int delay) {
 
         if (nr_ball >= 3) {
@@ -342,7 +355,7 @@ public class AutonomyOpred extends OpMode {
         }
 
         // daca culoarea e buna -> trage
-        if (stor[0] == neededOrder[nr_ball]) {
+        if (stor[0] == neededOrder[nr_ball]||shootanyway) {
             if (!storagebgdShooting) {
                 storagebgdShooting = true;
                 shooting = true;
@@ -361,12 +374,17 @@ public class AutonomyOpred extends OpMode {
         }
         else {
             revLeft();
+            nr_revleft++;
             int temp = stor[0];
             stor[0] = stor[2];
             stor[2] = stor[1];
             stor[1] = temp;
 
             bgdtimer.reset();
+        }
+        if(nr_revleft>3){
+            shootanyway = true;
+            nr_ball = 0;
         }
     }
 
@@ -376,9 +394,8 @@ public class AutonomyOpred extends OpMode {
 
             case 0: /// pozitie de tras
                 follower.followPath(paths.Path1);
-                nr_ball = 0;
-                sort_bgd_gata=false;
-                bgdtimer.reset();
+
+                sort_bgd_reset(2,1,1);
                 if (startingPosition) {
                     rev.setPosition(revpos1);
                     startingPosition=false;
@@ -388,50 +405,61 @@ public class AutonomyOpred extends OpMode {
 
                 break;
             case 1: ///sorteaza si trage
-                if(pathtime.milliseconds()>500&&!follower.isBusy()){
+                if(pathtime.milliseconds()>300&&!follower.isBusy()){
                     if(!sort_bgd_gata){
-                        sort_bgd(3000);
+                        sort_bgd(300);
                         telemetry.addLine("bgdsorting type shi");
                     }
                     if(sort_bgd_gata){
                         pathtime.reset();
+                        sort_bgd_gata=false;
                         pathState++;
                     }
-
                 }
                 break;
 
             case 2: ///merge la poz de luat mingi
-                if(pathtime.milliseconds()>5000&&!follower.isBusy()){
+                if(pathtime.milliseconds()>1200&&!follower.isBusy()){
                     follower.followPath(paths.Path2);
+                    ballCount = 0;// reset pt intake
+                    IntakeTimer.reset();
                     pathState = 3;
                     pathtime.reset();
                 }
                 break;
             case 3: /// ia mingi
-                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                if(pathtime.milliseconds()>500&&!follower.isBusy()){
                     follower.followPath(paths.Path3);
+                    intakeSort = true;
                     pathState=4;
                     pathtime.reset();
 
                 }
                 break;
             case 4: ///merge la pos de tras mingi
-                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                if(pathtime.milliseconds()>2500&&!follower.isBusy()){
                     follower.followPath(paths.Path4);
+                    sort_bgd_reset(2,1,1);
                     pathState = 5;
                     pathtime.reset();
                 }
                 break;
-            case 5:
-                    if(pathtime.milliseconds()>4000&&!follower.isBusy()){
-                        pathState = 6;
-
-                        pathtime.reset();
+            case 5: ///sort si trage
+                    if(pathtime.milliseconds()>500&&!follower.isBusy()){
+                        intakeSort = false;
+                        if(!sort_bgd_gata){
+                            sort_bgd(300);
+                            telemetry.addLine("bgdsorting type shi");
+                        }
+                        if(sort_bgd_gata){
+                            pathtime.reset();
+                            sort_bgd_gata=false;
+                            pathState++;
+                        }
                     }
                 break;
             case 6:
-                    if(pathtime.milliseconds()>4000&&!follower.isBusy()){
+                    if(pathtime.milliseconds()>2000&&!follower.isBusy()){
                         pathState = 7;
                         pathtime.reset();
                     }
