@@ -307,7 +307,7 @@ public class TeleOpNou2 extends LinearOpMode {
     double speed,turn,strafe;
     public void run() {///TODO clean this up
         if (!pushTunInit) {
-            push_tun.setPosition(0);
+            push_tun.setPosition(0.80);
             pushTunInit=true;
         }
         boolean isTriggerPressedb = gamepad1.circle;

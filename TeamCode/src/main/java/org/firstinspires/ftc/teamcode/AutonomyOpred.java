@@ -187,6 +187,11 @@ public class AutonomyOpred extends OpMode {
         double const2 = 1000;
         vitTun = const2;
         vitTun2 = const2+1100;
+        if (startingPosition) {
+                    rev.setPosition(revpos1);
+                    startingPosition=false;
+                    push_tun.setPosition(0.75);
+                }
 
         tun(vitTun,vitTun2,true);
         intake();
@@ -402,10 +407,6 @@ public class AutonomyOpred extends OpMode {
 //                nr_ball = 0;
 //                sort_bgd_gata=false;
 //                bgdtimer.reset();
-//                if (startingPosition) {
-//                    rev.setPosition(revpos1);
-//                    startingPosition=false;
-//                }
                 pathtime.reset();
                 pathState = 1;
 
