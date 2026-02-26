@@ -303,8 +303,13 @@ public class TeleOpNou2 extends LinearOpMode {
     }
 
     final double maxspeed = 0.7;
+    boolean pushTunInit = false;
     double speed,turn,strafe;
     public void run() {///TODO clean this up
+        if (!pushTunInit) {
+            push_tun.setPosition(0.80);
+            pushTunInit=true;
+        }
         boolean isTriggerPressedb = gamepad1.circle;
         if (isTriggerPressedb && !pressedb) { //circle
             starerun = !starerun;

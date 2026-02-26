@@ -186,6 +186,12 @@ public class AutonomyOpred extends OpMode {
         calculateTrueTa();
         double const2 = 950;
         vitTun = const2;
+        vitTun2 = const2+1100;
+        if (startingPosition) {
+                    rev.setPosition(revpos1);
+                    startingPosition=false;
+                    push_tun.setPosition(0.75);
+                }
         vitTun2 = const2+1500;
 
         tun(vitTun,vitTun2,true);
@@ -255,6 +261,8 @@ public class AutonomyOpred extends OpMode {
         public PathChain Path3;
         public PathChain Path4;
         public PathChain Path5;
+        public PathChain Path6;
+        public PathChain Path7;
 
 
         public Paths(Follower follower) {
@@ -297,17 +305,38 @@ public class AutonomyOpred extends OpMode {
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(253))
                     .build();
-            Path5 = follower.pathBuilder()
-                    .addPath(
+            Path5 = follower.pathBuilder().addPath(
                             new BezierLine(
-                                    new Pose(85.210,18.090),
-                                    new Pose(109.1,36)
+                                    new Pose(85.210, 18.000),
+
+                                    new Pose(87.183, 56.500)
                             )
-                    )
-                    .setLinearHeadingInterpolation(Math.toRadians(245),Math.toRadians(0))
+                    ).setLinearHeadingInterpolation(Math.toRadians(253), Math.toRadians(0))
+
+                    .build();
+
+            Path6 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(87.183, 56.500),
+
+                                    new Pose(105.000, 62.100)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
+
+                    .build();
+
+            Path7 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(105.000, 62.100),
+
+                                    new Pose(85.210, 10.000)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(253))
+
                     .build();
         }
     }
+
     int revDelay =1000;
     public double distanta_proxsensorCM=6.7;
     boolean startingPosition = true;
@@ -415,6 +444,7 @@ public class AutonomyOpred extends OpMode {
                         sort_bgd_gata=false;
                         pathState++;
                     }
+
                 }
                 break;
 
@@ -464,15 +494,27 @@ public class AutonomyOpred extends OpMode {
                         pathtime.reset();
                     }
                 break;
-            case 7:
+            case 7:/// merge la pozitia de luat mingi 2
                 if(pathtime.milliseconds()>2000&&!follower.isBusy()){
                     follower.followPath(paths.Path5);
                     pathState = 8;
+                    pathtime.reset();
                 }
                 break;
-            case 8:
+            case 8:if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                follower.followPath(paths.Path6);
+                pathState = 9;
+                pathtime.reset();
+            }
                 break;
-
+            case 9:if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                follower.followPath(paths.Path5);
+                pathState = 10;
+                pathtime.reset();
+            }
+                break;
+            case 10:
+                break;
         }
 
         return pathState;
