@@ -70,9 +70,9 @@ public class TeleOpNou2 extends LinearOpMode {
     public DcMotor intake;
     public Servo push_tun;
     public Servo rev;
-    public final double revpos1=0.00;
-    public final double revpos2=0.37;
-    public final double revpos3 = 0.76;
+    public final double revpos1=0.06;
+    public final double revpos2=0.45;
+    public final double revpos3 = 0.82;
     public final double revposAlter = 0.056;
     public final double vmax = 0.7;
     public int motif_code;
@@ -376,7 +376,7 @@ public class TeleOpNou2 extends LinearOpMode {
             imu.resetYaw();
         }
 
-        intake(0.7); /// triangle
+        intake(.9); /// triangle
 
         if (gamepad2.right_trigger > 0.3 && !storage_basic_running) { /// pornim storage basic
             storage_basic_running = true;
@@ -420,7 +420,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
         calculateTrueTa();
         calculateTrueTx();
-        double const1 =  230, const2 = 500;
+        double const1 =  290, const2 = 1000;
         if(trueTa!=0){
             vitTun = const1/trueTa + const2;
             vitTun2 = const1/trueTa +const2+400;
@@ -651,8 +651,7 @@ public class TeleOpNou2 extends LinearOpMode {
                 }
             }
         }*/
-    ///TODO make continuous rotation && find pos with through bore encoder
-    public void revLeft() {
+    public void revLeft() { ///  din storage in tun
         double err = 0.01;
         double current = rev.getPosition();
     if (Math.abs(current - revpos1) < err) {
@@ -668,7 +667,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
     }
 
-    public void revRight() {
+    public void revRight() { ///  din intake in tun
         double err = 0.01;
         double current = rev.getPosition();
         if (Math.abs(current - revpos1) < err) {

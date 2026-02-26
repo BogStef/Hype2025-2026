@@ -30,7 +30,7 @@ import com.pedropathing.geometry.Pose;import com.pedropathing.paths.PathConstrai
 import java.util.List;
 
 
-@Autonomous(name = "AUTO Far R", group = "Autonomous")
+@Autonomous(name = "AUTO Far R - 9 balls", group = "Autonomous")
 @Configurable  // Panels
 public class AutonomyOpred extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
@@ -45,9 +45,9 @@ public class AutonomyOpred extends OpMode {
     PathConstraints fastConstraints =
             new PathConstraints(0.9, 100, 0.8, 1);
 
-    public final double revpos1=0.00;
-    public final double revpos2=0.37;
-    public final double revpos3 = 0.76;
+    public final double revpos1=0.06;
+    public final double revpos2=0.45;
+    public final double revpos3 = 0.82;
 
     public DcMotor intake;
     public Limelight3A limelight;
@@ -184,7 +184,7 @@ public class AutonomyOpred extends OpMode {
         if (motif_code == -1)
             motif_code = motif(); //cauta motif
         calculateTrueTa();
-        double const2 = 950;
+        double const2 = 3500;
         vitTun = const2;
         vitTun2 = const2+1100;
         if (startingPosition) {
@@ -192,7 +192,6 @@ public class AutonomyOpred extends OpMode {
                     startingPosition=false;
                     push_tun.setPosition(0.75);
                 }
-        vitTun2 = const2+1500;
 
         tun(vitTun,vitTun2,true);
         intake();
@@ -268,29 +267,30 @@ public class AutonomyOpred extends OpMode {
         public Paths(Follower follower) {
             Path1 = follower.pathBuilder()/// poz de tras
                     .addPath(
-                            new BezierLine(
-                                    new Pose(81.524, 8.851),
-                                    new Pose(85.507, 10)
+                            new BezierCurve(
+                                    new Pose(81.97,90.77),
+                                    new Pose(74,132),
+                                    new Pose(100, 100)
                             )
                     )
-                    .setLinearHeadingInterpolation(Math.toRadians(270), Math.toRadians(253))
+                    .setLinearHeadingInterpolation(Math.toRadians(217), Math.toRadians(225))
                     .build();
 
             Path2 = follower.pathBuilder()/// poz pregatire luat bile
                     .addPath(
                             new BezierLine(
-                                    new Pose(85.507, 10),
-                                    new Pose(87.183, 37)
+                                    new Pose(100, 100),
+                                    new Pose(94, 84)
                             )
                     )
-                    .setLinearHeadingInterpolation(Math.toRadians(253), Math.toRadians(0))
+                    .setLinearHeadingInterpolation(Math.toRadians(225), Math.toRadians(0))
                     .build();
 
             Path3 = follower.pathBuilder()/// poz luat bile
                     .addPath(
                             new BezierLine(
-                                    new Pose(87.183, 37),
-                                    new Pose(115.069, 37)
+                                    new Pose(94, 84),
+                                    new Pose(128, 84)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
@@ -299,23 +299,23 @@ public class AutonomyOpred extends OpMode {
             Path4 = follower.pathBuilder()/// poz tras
                     .addPath(
                             new BezierLine(
-                                    new Pose(115.069, 37),
-                                    new Pose(85.210, 10)
+                                    new Pose(128, 84),
+                                    new Pose(100, 100)
                             )
                     )
-                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(253))
+                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(225))
                     .build();
-            Path5 = follower.pathBuilder().addPath(
+            Path5 = follower.pathBuilder().addPath( /// poz preg luat mingi 2
                             new BezierLine(
-                                    new Pose(85.210, 18.000),
+                                    new Pose(100, 100),
 
                                     new Pose(87.183, 56.500)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(253), Math.toRadians(0))
+                    ).setLinearHeadingInterpolation(Math.toRadians(225), Math.toRadians(0))
 
                     .build();
 
-            Path6 = follower.pathBuilder().addPath(
+            Path6 = follower.pathBuilder().addPath( /// luat mingi 2
                             new BezierLine(
                                     new Pose(87.183, 56.500),
 
@@ -325,26 +325,21 @@ public class AutonomyOpred extends OpMode {
 
                     .build();
 
-            Path7 = follower.pathBuilder().addPath(
+            Path7 = follower.pathBuilder().addPath( ///// tras
                             new BezierLine(
                                     new Pose(105.000, 62.100),
 
-                                    new Pose(85.210, 10.000)
+                                    new Pose(100, 100.000)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(253))
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(225))
 
                     .build();
         }
     }
-
-    int revDelay =1000;
     public double distanta_proxsensorCM=6.7;
     boolean startingPosition = true;
-
-
-
-
-    int stor[] = {2,1,1}; //0 - tun , 1-intake, 2 - storage ///vmm
+    byte stor[] = {2,1,1}; //0 - tun , 1-intake, 2 - storage ///vmm
+    byte shootingPos = 0;
     int nr_ball = 0; ///reset extern
     ElapsedTime bgdtimer = new ElapsedTime();
     boolean storagebgdShooting = false;
@@ -352,8 +347,7 @@ public class AutonomyOpred extends OpMode {
     int nr_revleft = 0;
     boolean shootanyway = false;
 
-    void sort_bgd_reset(int a,int b,int c){
-
+    void sort_bgd_reset(byte a,byte b,byte c){
         storagebgdShooting = false;
         bgdtimer.reset();
         sort_bgd_gata = false;
@@ -363,7 +357,6 @@ public class AutonomyOpred extends OpMode {
         stor [0] = a;
         stor[1] = b;
         stor[2] = c;
-
     }
     void sort_bgd(int delay) {
 
@@ -375,7 +368,7 @@ public class AutonomyOpred extends OpMode {
 
         if (stor[0] == 0) {
             revLeft();
-            int temp = stor[0];
+            byte temp = stor[0];
             stor[0] = stor[2];
             stor[2] = stor[1];
             stor[1] = temp;
@@ -385,15 +378,16 @@ public class AutonomyOpred extends OpMode {
 
         // daca culoarea e buna -> trage
         if (stor[0] == neededOrder[nr_ball]||shootanyway) {
+            if(shootanyway){
+                shootanyway =false;
+            }
             if (!storagebgdShooting) {
                 storagebgdShooting = true;
                 shooting = true;
 
             }
-
             if (functionshootstate == 2) {
                 nr_ball++;
-                // reset ot urmatoarea bila
                 stor[0] = 0;
                 shooting = false;
                 storagebgdShooting = false;
@@ -401,19 +395,18 @@ public class AutonomyOpred extends OpMode {
                 bgdtimer.reset();
             }
         }
-        else {
+        else if(nr_revleft<=3){/// cre ca trebe <
             revLeft();
             nr_revleft++;
-            int temp = stor[0];
+            byte temp = stor[0];
             stor[0] = stor[2];
             stor[2] = stor[1];
             stor[1] = temp;
 
             bgdtimer.reset();
         }
-        if(nr_revleft>3){
-            shootanyway = true;
-            nr_ball = 0;
+            else {
+
         }
     }
 
@@ -424,14 +417,9 @@ public class AutonomyOpred extends OpMode {
             case 0: /// pozitie de tras
                 follower.followPath(paths.Path1);
 
-                sort_bgd_reset(2,1,1);
-                if (startingPosition) {
-                    rev.setPosition(revpos1);
-                    startingPosition=false;
-                }
+                sort_bgd_reset((byte)2,(byte)1,(byte)1);
                 pathtime.reset();
                 pathState = 1;
-
                 break;
             case 1: ///sorteaza si trage
                 if(pathtime.milliseconds()>300&&!follower.isBusy()){
@@ -469,7 +457,7 @@ public class AutonomyOpred extends OpMode {
             case 4: ///merge la pos de tras mingi
                 if(pathtime.milliseconds()>2500&&!follower.isBusy()){
                     follower.followPath(paths.Path4);
-                    sort_bgd_reset(2,1,1);
+                    sort_bgd_reset((byte)2,(byte)1,(byte)1);
                     pathState = 5;
                     pathtime.reset();
                 }
@@ -508,7 +496,7 @@ public class AutonomyOpred extends OpMode {
             }
                 break;
             case 9:if(pathtime.milliseconds()>2000&&!follower.isBusy()){
-                follower.followPath(paths.Path5);
+                follower.followPath(paths.Path7);
                 pathState = 10;
                 pathtime.reset();
             }
