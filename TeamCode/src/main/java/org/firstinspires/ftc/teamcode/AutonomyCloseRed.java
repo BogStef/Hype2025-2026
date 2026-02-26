@@ -262,7 +262,7 @@ public class AutonomyCloseRed extends OpMode {
         public PathChain Path5;
         public PathChain Path6;
         public PathChain Path7;
-
+        public PathChain Path8;
 
         public Paths(Follower follower) {
             Path1 = follower.pathBuilder()/// poz de tras
@@ -331,6 +331,16 @@ public class AutonomyCloseRed extends OpMode {
                                     new Pose(85.210, 10.000)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(253))
+
+                    .build();
+
+            Path8 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(85.210,10.000),
+
+                                    new Pose(127,12)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(253), Math.toRadians(0))
 
                     .build();
         }
@@ -500,7 +510,13 @@ public class AutonomyCloseRed extends OpMode {
                 pathtime.reset();
             }
                 break;
-            case 10:
+            case 10:if(pathtime.milliseconds()>2000&&!follower.isBusy()) {
+                follower.followPath(paths.Path8);
+                pathState = 11;
+                pathtime.reset();
+                break;
+            }
+            case 11:
                 break;
         }
 

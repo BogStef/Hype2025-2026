@@ -30,7 +30,7 @@ import com.pedropathing.geometry.Pose;import com.pedropathing.paths.PathConstrai
 import java.util.List;
 
 
-@Autonomous(name = "AUTO Far B", group = "Autonomous")
+@Autonomous(name = "AUTO Close B - 9 balls", group = "Autonomous")
 @Configurable  // Panels
 public class AutonomyOpblue extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
@@ -45,9 +45,9 @@ public class AutonomyOpblue extends OpMode {
     PathConstraints fastConstraints =
             new PathConstraints(0.9, 100, 0.8, 1);
 
-    public final double revpos1=0.00;
-    public final double revpos2=0.37;
-    public final double revpos3 = 0.76;
+    public final double revpos1=0.06;
+    public final double revpos2=0.45;
+    public final double revpos3 = 0.82;
 
     public DcMotor intake;
     public Limelight3A limelight;
@@ -60,8 +60,9 @@ public class AutonomyOpblue extends OpMode {
     public double vitTun2 = 0;
 
     int shootState=-1;
-    int motif_switch = 22;
-    int motif_code = 21;
+    int motif_code = -1;
+
+
 
     @Override
     public void init() {
@@ -90,16 +91,13 @@ public class AutonomyOpblue extends OpMode {
         limelight.start(); // This tells Limelight to start looking!
         limelight.pipelineSwitch(0);
 
-//        stspa.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//        stft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//        drspa.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//        drft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 
 
+        tun1.setVelocityPIDFCoefficients(6.7,0,0.1,13.7);
+        tun2.setVelocityPIDFCoefficients(6.7,0,0.1,13.7);
         tun1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         tun2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        //intake_up = hardwareMap.get(DcMotor.class, "intake_up");///intake
 
 
         limelight = hardwareMap.get(Limelight3A.class, "Ethernet Device");///camera
@@ -116,49 +114,111 @@ public class AutonomyOpblue extends OpMode {
 
         follower = Constants.createFollower(hardwareMap);
 
-
         rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
 
     }
+    boolean ballDetected;
+    boolean lastBallDetected;
+    int ballCount = 0;
+    boolean intakeSort = false;
+    boolean secondRevLeft = false;
+    boolean thirdRevRight = false;
+    ElapsedTime IntakeTimer = new ElapsedTime();
     void intake(){
         intake.setPower(.4);
+        if (intakeSort) {
+            distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
+            ballDetected = distanceCM < distanta_proxsensorCM;
+
+            if (ballDetected && !lastBallDetected && ballCount < 3 && IntakeTimer.milliseconds() > 800 && getColor() != -1) {
+                if (ballCount == 0) {
+                    if (getColor()==2) {
+                        revLeft();
+                        secondRevLeft = true;
+                    }
+                    else {
+                        revRight();
+                        secondRevLeft = false;
+                    }
+                }
+                else if (ballCount == 1) {
+                    if (secondRevLeft) {
+                        revLeft();
+                    }
+                    else {
+                        if (getColor() == 1) {
+                            thirdRevRight = true;
+                        }
+                        else thirdRevRight = false;
+                        revRight();
+
+                    }
+                }
+                else if (ballCount == 2 && thirdRevRight) revRight();
+                ballCount++;
+                IntakeTimer.reset();
+            }
+            lastBallDetected = ballDetected;
+        }
     }
+    double distanceCM =0;
 
     @Override
     public void loop() {
         follower.update(); // Update Pedro Pathing
-        shoot();
+
         pathState = autonomousPathUpdate(); // Update autonomous state machine
-        panelsTelemetry.debug("Path State", pathState);
-        panelsTelemetry.debug("X", follower.getPose().getX());
-        panelsTelemetry.debug("Y", follower.getPose().getY());
-        panelsTelemetry.debug("Heading", follower.getPose().getHeading());
-        panelsTelemetry.update(telemetry);
+        telemetry.addData("motif: ",motif_code);
+        telemetry.addData("nrball",nr_ball);
+        telemetry.addData("stor 0",stor[0]);
+        telemetry.addData("stor 1",stor[1]);
+        telemetry.addData("stor 2",stor[2]);
+        telemetry.addData("neededorder 0 ",neededOrder[0]);
+        telemetry.addData("needeed order 1",neededOrder[1]);
+        telemetry.addData("needed order 2",neededOrder[2]);
+        telemetry.addData("PathState",pathState);
+        telemetry.addData("shootingstate",functionshootstate);
+
         distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
         if (motif_code == -1)
             motif_code = motif(); //cauta motif
         calculateTrueTa();
-        double const1 = 1000, const2 = 1050;
+        double const2 = 3500;
         vitTun = const2;
-        vitTun2 = const2+500;
+        vitTun2 = const2+1100;
+        if (startingPosition) {
+            rev.setPosition(revpos1);
+            startingPosition=false;
+            push_tun.setPosition(0.75);
+        }
 
         tun(vitTun,vitTun2,true);
         intake();
 
-        switch (motif_switch) {
-            case 23: neededOrder[0] = 1;
-                neededOrder[1] = 0;
-                neededOrder[2] = 0;
-                break;
-            case 21: neededOrder[0] = 0;
+        switch (motif_code) {
+            case 23:
+                neededOrder[0] = 1;
                 neededOrder[1] = 1;
-                neededOrder[2] = 0;
+                neededOrder[2] = 2;
                 break;
-            case 22: neededOrder[0] = 0;
-                neededOrder[1] = 0;
+            case 21: neededOrder[0] = 2;
+                neededOrder[1] = 1;
                 neededOrder[2] = 1;
                 break;
+            case 22: neededOrder[0] = 1;
+                neededOrder[1] = 2;
+                neededOrder[2] = 1;
+                break;
+            default: ///motif 21
+                neededOrder[0] = 2;
+                neededOrder[1] = 1;
+                neededOrder[2] = 1;
+
         }
+        shoot();
+
+
+
         /// BlueX = RedX
         /// BlueY = 144 - RedY
         /// BlueHeading = -RedHeading
@@ -183,9 +243,6 @@ public class AutonomyOpblue extends OpMode {
 
             if (id == 21 || id == 22 || id == 23) {
                 motif_code = id;
-                telemetry.addData("Motif Found", id);
-                telemetry.update();
-                neededOrder[id-21] = 1;
                 return id;
 
 
@@ -202,78 +259,165 @@ public class AutonomyOpblue extends OpMode {
         public PathChain Path3;
         public PathChain Path4;
         public PathChain Path5;
+        public PathChain Path6;
+        public PathChain Path7;
+        public PathChain Path8;
 
 
         public Paths(Follower follower) {
+            Path1 = follower.pathBuilder()/// poz de tras
+                    .addPath(
+                            new BezierLine(
+                                    new Pose(62.476, 8.851),
+                                    new Pose(58.493, 10)
+                            )
+                    )
+                    .setLinearHeadingInterpolation(Math.toRadians(270), Math.toRadians(287))
+                    .build();
 
-                Path1 = follower.pathBuilder()
-                        .addPath(
-                                new BezierLine(
-                                        new Pose(62.476, 8.851),
-                                        new Pose(58.493, 17.867)
-                                )
-                        )
-                        .setLinearHeadingInterpolation(
-                                Math.toRadians(-90),
-                                Math.toRadians(-70)
-                        )
-                        .build();
+            Path2 = follower.pathBuilder()/// poz pregatire luat bile
+                    .addPath(
+                            new BezierLine(
+                                    new Pose(58.493, 10),
+                                    new Pose(56.817, 35)
+                            )
+                    )
+                    .setLinearHeadingInterpolation(Math.toRadians(287), Math.toRadians(180))
+                    .build();
 
-                Path2 = follower.pathBuilder()
-                        .addPath(
-                                new BezierLine(
-                                        new Pose(58.493, 17.867),
-                                        new Pose(56.817, 35.795)
-                                )
-                        )
-                        .setLinearHeadingInterpolation(
-                                Math.toRadians(-70),
-                                Math.toRadians(180)
-                        )
-                        .build();
+            Path3 = follower.pathBuilder()/// poz luat bile
+                    .addPath(
+                            new BezierLine(
+                                    new Pose(56.817, 35),
+                                    new Pose(28.931, 35)
+                            )
+                    )
+                    .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+                    .build();
 
-                Path3 = follower.pathBuilder()
-                        .addPath(
-                                new BezierLine(
-                                        new Pose(56.817, 35.795),
-                                        new Pose(33.931, 41)
-                                )
-                        )
-                        .setLinearHeadingInterpolation(
-                                Math.toRadians(180),
-                                Math.toRadians(180)
-                        )
-                        .build();
+            Path4 = follower.pathBuilder()/// poz tras
+                    .addPath(
+                            new BezierLine(
+                                    new Pose(28.931, 35),
+                                    new Pose(58.79, 10)
+                            )
+                    )
+                    .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(287))
+                    .build();
+            Path5 = follower.pathBuilder().addPath( /// poz parcare
+                            new BezierLine(
+                                    new Pose(58.79, 18.000),
 
-                Path4 = follower.pathBuilder()
-                        .addPath(
-                                new BezierLine(
-                                        new Pose(33.931, 41),
-                                        new Pose(58.790, 18.090)
-                                )
-                        )
-                        .setLinearHeadingInterpolation(
-                                Math.toRadians(180),
-                                Math.toRadians(-70)
-                        )
-                        .build();
+                                    new Pose(56.817, 56.500)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(287), Math.toRadians(180))
 
-                Path5 = follower.pathBuilder()
-                        .addPath(
-                                new BezierLine(
-                                        new Pose(58.790, 18.090),
-                                        new Pose(34.9, 36)
-                                )
-                        )
-                        .setLinearHeadingInterpolation(
-                                Math.toRadians(-70),
-                                Math.toRadians(180)
-                        )
-                        .build();
-            }
+                    .build();
+
+            Path6 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(56.817, 56.500),
+
+                                    new Pose(39, 62.100)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
+
+                    .build();
+
+            Path7 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(39, 62.100),
+
+                                    new Pose(58.79, 10.000)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(287))
+
+                    .build();
+
+            Path8 = follower.pathBuilder().addPath(
+                            new BezierLine(
+                                    new Pose(58.79,10.000),
+
+                                    new Pose(17,12)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(287), Math.toRadians(180))
+
+                    .build();
+        }
     }
+    public double distanta_proxsensorCM=6.7;
+    boolean startingPosition = true;
+    byte stor[] = {2,1,1}; //0 - tun , 1-intake, 2 - storage ///vmm
+    byte shootingPos = 0;
+    int nr_ball = 0; ///reset extern
+    ElapsedTime bgdtimer = new ElapsedTime();
+    boolean storagebgdShooting = false;
+    boolean sort_bgd_gata = false;
+    int nr_revleft = 0;
+    boolean shootanyway = false;
 
+    void sort_bgd_reset(byte a,byte b,byte c){
+        storagebgdShooting = false;
+        bgdtimer.reset();
+        sort_bgd_gata = false;
+        nr_revleft = 0;
+        shootanyway=false;
+        nr_ball =0;
+        stor [0] = a;
+        stor[1] = b;
+        stor[2] = c;
+    }
+    void sort_bgd(int delay) {
 
+        if (nr_ball >= 3) {
+            sort_bgd_gata = true;
+            return;
+        }
+        if (bgdtimer.milliseconds() < delay) return;
+
+        if (stor[0] == 0) {
+            revLeft();
+            byte temp = stor[0];
+            stor[0] = stor[2];
+            stor[2] = stor[1];
+            stor[1] = temp;
+            bgdtimer.reset();
+            return;
+        }
+
+        // daca culoarea e buna -> trage
+        if (stor[0] == neededOrder[nr_ball]||shootanyway) {
+            if(shootanyway){
+                shootanyway =false;
+            }
+            if (!storagebgdShooting) {
+                storagebgdShooting = true;
+                shooting = true;
+
+            }
+            if (functionshootstate == 2) {
+                nr_ball++;
+                stor[0] = 0;
+                shooting = false;
+                storagebgdShooting = false;
+                functionshootstate = 0;
+                bgdtimer.reset();
+            }
+        }
+        else if(nr_revleft<=3){/// cre ca trebe <
+            revLeft();
+            nr_revleft++;
+            byte temp = stor[0];
+            stor[0] = stor[2];
+            stor[2] = stor[1];
+            stor[1] = temp;
+
+            bgdtimer.reset();
+        }
+        else {
+
+        }
+    }
 
     ElapsedTime pathtime = new ElapsedTime();
     public int autonomousPathUpdate() {
@@ -281,266 +425,105 @@ public class AutonomyOpblue extends OpMode {
 
             case 0: /// pozitie de tras
                 follower.followPath(paths.Path1);
-                pathState = 1;
+
+                sort_bgd_reset((byte)2,(byte)1,(byte)1);
                 pathtime.reset();
+                pathState = 1;
                 break;
             case 1: ///sorteaza si trage
-                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
-                    storage_sort();
-                    readytoshoot = true;
-                    if (pathtime.milliseconds()>5000 && getColor() != -1) {
-
+                if(pathtime.milliseconds()>300&&!follower.isBusy()){
+                    if(!sort_bgd_gata){
+                        sort_bgd(300);
+                        telemetry.addLine("bgdsorting type shi");
                     }
-                    if (pathtime.milliseconds()>2000+8000)
-                        pathState = 2;
+                    if(sort_bgd_gata){
+                        pathtime.reset();
+                        sort_bgd_gata=false;
+                        pathState++;
+                    }
+
                 }
                 break;
+
             case 2: ///merge la poz de luat mingi
-                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                if(pathtime.milliseconds()>1200&&!follower.isBusy()){
                     follower.followPath(paths.Path2);
+                    ballCount = 0;// reset pt intake
+                    IntakeTimer.reset();
                     pathState = 3;
                     pathtime.reset();
                 }
                 break;
             case 3: /// ia mingi
-                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                if(pathtime.milliseconds()>500&&!follower.isBusy()){
                     follower.followPath(paths.Path3);
+                    intakeSort = true;
                     pathState=4;
                     pathtime.reset();
+
                 }
                 break;
-
-
             case 4: ///merge la pos de tras mingi
-                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                if(pathtime.milliseconds()>2500&&!follower.isBusy()){
                     follower.followPath(paths.Path4);
+                    sort_bgd_reset((byte)2,(byte)1,(byte)1);
                     pathState = 5;
                     pathtime.reset();
                 }
                 break;
-            case 5: ///sorteaza
-                storage_sort();
-                if(pathtime.milliseconds()>4000&&!follower.isBusy()){
-                    pathState = 6;
-                    pathtime.reset();
+            case 5: ///sort si trage
+                if(pathtime.milliseconds()>500&&!follower.isBusy()){
+                    intakeSort = false;
+                    if(!sort_bgd_gata){
+                        sort_bgd(300);
+                        telemetry.addLine("bgdsorting type shi");
+                    }
+                    if(sort_bgd_gata){
+                        pathtime.reset();
+                        sort_bgd_gata=false;
+                        pathState++;
+                    }
                 }
                 break;
-            case 6://trage ///////////inutil
-                storage_sort();
-                readytoshoot = true;
-                if(pathtime.milliseconds()>4000&&!follower.isBusy()){
+            case 6:
+                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
                     pathState = 7;
                     pathtime.reset();
-                    completed= false;
                 }
                 break;
-            case 7:
+            case 7:/// merge la pozitia de luat mingi 2
                 if(pathtime.milliseconds()>2000&&!follower.isBusy()){
                     follower.followPath(paths.Path5);
                     pathState = 8;
+                    pathtime.reset();
                 }
                 break;
-            case 8:
+            case 8:if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                follower.followPath(paths.Path6);
+                pathState = 9;
+                pathtime.reset();
+            }
                 break;
-
+            case 9:if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                follower.followPath(paths.Path7);
+                pathState = 10;
+                pathtime.reset();
+            }
+                break;
+            case 10:if(pathtime.milliseconds()>2000&&!follower.isBusy()) {
+                follower.followPath(paths.Path8);
+                pathState = 11;
+                pathtime.reset();
+                break;
+            }
+            case 11:
+                break;
         }
 
         return pathState;
     }
 
-    public int sortState = 100;
-    ElapsedTime sort_timer = new ElapsedTime();
-    int sortDelay = 400;
-    public int [] orderBall = {0 , 0 , 0};
-    public boolean readytoshoot = false;
-
-    public double distanceCM=0;
-    public double distanta_proxsensorCM=6.7;//real = 13.3
-
-    public int[] neededOrder = {0,0,0};//0 - purple, 1 - green
-    boolean storageShooting = false; // new flag to indicate storage-controlled shooting
-    int rumbleTime = 500;
-    int shootDelay = 400;
-    int intun = -1;
-    boolean sorting = true;
-    boolean completed = false;
-    public void storage_sort(){
-        /*
-        toate valorile ajung in array care il folosim la final
-        prima minge buna = revLeft
-        prima minge rea = rev right
-        daca prima minge buna atunci a doua minge revleft
-        altfel daca prima minge rea rev right (verificam culoare)
-        la final mingea buna in tun // trebuie verificat prin a schimba valorile din orderBall cu culorile, nu daca se alineaza cu motiful
-        trebuie verificat daca trebuie rev left sau rev right ca mingea buna sa fie in tun si nustiu cum
-        verificam care ii urm buna (ori intake ori storage) si in functie de asta rev right x 2 sau ref left x2
-         */
-        if (!sorting) return;
-        switch(sortState) {
-            case 0:
-                if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
-                    //////
-                    if (getColor() == neededOrder[0]) {
-                        intun = getColor();
-                        revLeft();
-                        orderBall[0] = 1;
-                        sortState++;
-                    } else {
-                        revRight();
-                        orderBall[0] = 0;
-                        sortState++;
-                    }
-                    sort_timer.reset();
-                }
-                break;
-            case 1:
-                if (sort_timer.milliseconds() > sortDelay) {
-                    sortState++;
-                }
-                break;
-            case 2:
-                if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
-                    //////
-                    if (getColor() == neededOrder[1]) {
-                        orderBall[1] = 1;
-                    } else orderBall[1] = 0;
-                    if (orderBall[0] == 1) {
-                        revLeft();
-                        sortState++;
-                        // prima bila in tun
-                    } else {
-                        intun = getColor();
-                        revRight();
-                        sortState++;
-                        // a doua bila in tun
-                    }
-                    sort_timer.reset();
-                }
-                break;
-            case 3:
-                if (sort_timer.milliseconds() > sortDelay) {
-                    sortState++;
-                }
-                break;
-            case 4:
-                if (distanceCM < distanta_proxsensorCM && getColor() != -1) {
-                    //////
-                    if (intun == neededOrder[0]) {
-                        //nu se intampla nimic deoarec ii buna
-                    }
-                    else if (getColor() == neededOrder[0]) { //mingea din intake merge in tun daca ii buna si aia din tun nu
-                        revRight();
-                        sort_timer.reset();
-                    }
-                    else { // mingea din storage merge in tun daca celelalte 2 nu sunt bune
-                        revLeft();
-                        sort_timer.reset();
-                    }
-                    shootState = 0;
-                    sortState++;
-                    completed = true;
-                }
-                break;
-
-
-            // bila verde in tun in preload
-            case 100: if (neededOrder[0] == 1) { //motif 21 vmm
-                sort_timer.reset();
-                shootState = 0;
-                sortState++;
-            } else if (neededOrder[1] == 1) { //motif 22 mvm
-                revRight();
-                sort_timer.reset();
-                shootState = 0;
-                sortState++;
-            } else { // motif 23 mmv
-                revLeft();
-                sort_timer.reset();
-                shootState = 0;
-                sortState++;
-            }
-                break;
-        }
-
-
-
-        if (readytoshoot) {
-
-            switch (shootState) {
-
-                case 0:
-                    if (sort_timer.milliseconds() > sortDelay) {
-                        if (!storageShooting) {
-                            storageShooting = true;
-                            shooting = true;
-                            shoot();
-                        }
-                        if (functionshootstate == 2) {
-                            shooting = false;
-                            storageShooting = false;
-                            functionshootstate = 0;
-                            shootState++;
-                            shootTimer.reset();
-                        }
-                    }
-                    break;
-
-                case 1:
-                    if (shootTimer.milliseconds() > shootDelay) {
-                        if (getColor() == neededOrder[1]) revRight();
-                        else revLeft();
-                        sort_timer.reset();
-                        shootState = 2;
-                    }
-                    break;
-
-                case 2:
-                    if (sort_timer.milliseconds() > sortDelay) {
-                        if (!storageShooting) {
-                            storageShooting = true;
-                            shooting = true;
-                            shoot();
-                        }
-                        if (functionshootstate == 2) {
-                            shooting = false;
-                            storageShooting = false;
-                            functionshootstate = 0;
-                            shootState++;
-                            shootTimer.reset();
-                        }
-                    }
-                    break;
-
-                case 3:
-                    if (shootTimer.milliseconds() > shootDelay) {
-                        if (getColor() != -1) revRight();
-                        else revLeft();
-                        sort_timer.reset();
-                        shootState = 4;
-                    }
-                    break;
-
-                case 4:
-                    if (sort_timer.milliseconds() > sortDelay) {
-                        if (!storageShooting) {
-                            storageShooting = true;
-                            shooting = true;
-                            shoot();
-                        }
-                        if (functionshootstate == 2) {
-                            shooting = false;
-                            storageShooting = false;
-                            functionshootstate = 0;
-                            shootState++;
-                            sortState=0;
-                            readytoshoot=false;
-                        }
-                    }
-                    break;
-            }
-        }
-
-    }
+    public int[] neededOrder = {1,1,1};//0 - purple, 1 - green
     public int functionshootstate=0;
     ElapsedTime shootTimer = new ElapsedTime();
     boolean shooting = false;
@@ -556,7 +539,7 @@ public class AutonomyOpblue extends OpMode {
                 break;
 
             case 1: // extend after 200ms
-                if(shootTimer.milliseconds() > 200){
+                if(shootTimer.milliseconds() > 450){
                     push_tun.setPosition(0.75); // extend
                     functionshootstate = 2;
                 }
@@ -566,126 +549,7 @@ public class AutonomyOpblue extends OpMode {
                 break;
         }
     }
-    int overideState = 0;
-    boolean readyShootOveride = false;
-    ElapsedTime overideTime = new ElapsedTime();
-    int overideDelay = 400;
-    public void storage_overide () {
-        switch (overideState) {
-            case 0: sorting = false;
-                if (getColor() != -1) {
-                    readyShootOveride = true;
-                }
-                revRight();
-                overideState++;
-                overideTime.reset();
-                break;
 
-            case 1: if (overideTime.milliseconds() > overideDelay) {
-                if (readyShootOveride) {
-                    if (!storageShooting) {
-                        storageShooting = true;
-                        shooting = true;
-                        shoot();
-                    }
-                    if (functionshootstate == 2) {
-                        shooting = false;
-                        storageShooting = false;
-                        functionshootstate = 0;
-                        overideState++;
-                        readyShootOveride = false;
-                    }
-                    shootTimer.reset();
-                }
-                else overideState++;
-            }
-                break;
-
-            case 2: if (shootTimer.milliseconds()>shootDelay) {
-                if (getColor() != -1) {
-                    readyShootOveride = true;
-                }
-                revRight();
-                overideState++;
-                overideTime.reset();
-
-            }
-                break;
-
-            case 3: if (overideTime.milliseconds() > overideDelay) {
-                if (readyShootOveride) {
-                    if (!storageShooting) {
-                        storageShooting = true;
-                        shooting = true;
-                        shoot();
-                    }
-                    if (functionshootstate == 2) {
-                        shooting = false;
-                        storageShooting = false;
-                        functionshootstate = 0;
-                        overideState++;
-                        readyShootOveride = false;
-                    }
-                    shootTimer.reset();
-                }
-                else overideState++;
-            }
-                break;
-
-            case 4: if (shootTimer.milliseconds()>shootDelay) {
-                if (getColor() != -1) {
-                    readytoshoot = true;
-                }
-                revRight();
-                overideState++;
-                overideTime.reset();
-            }
-                break;
-
-            case 5: if (overideTime.milliseconds() > overideDelay) {
-                if (readyShootOveride) {
-                    if (!storageShooting) {
-                        storageShooting = true;
-                        shooting = true;
-                        shoot();
-                    }
-                    if (functionshootstate == 2) {
-                        shooting = false;
-                        storageShooting = false;
-                        functionshootstate = 0;
-                        overideState++;
-                        readyShootOveride = false;
-                    }
-                    shootTimer.reset();
-                }
-                else overideState++;
-                sorting = true;
-                sortState = 0;
-                readytoshoot = false;
-                shootState = -1;
-            }
-                break;
-        }
-    }
-
-    public int getColor() { /// 0==mov 1==green
-        double red, blue, green, alpha;
-        double error;
-        error = 120;
-        red = colorsensor.red();
-        blue = colorsensor.blue();
-        green = colorsensor.green();
-        alpha = colorsensor.alpha();
-
-        if(green>95&&green>blue&&green>red){
-            return 1;
-        }
-        if(red>green||blue>green)
-            return 0;
-
-        return -1;
-
-    }
 
     public void revLeft() {
         double err = 0.01;
@@ -706,7 +570,7 @@ public class AutonomyOpblue extends OpMode {
         }
     }
 
-    public void revRight(){
+    public void revRight(){/// din intake in tun
         double err = 0.01;
         double current = rev.getPosition();
 
@@ -745,8 +609,26 @@ public class AutonomyOpblue extends OpMode {
             tun1.setVelocity(0);
             tun2.setVelocity(0);
         }
+    }
 
-        telemetry.addData("vit:",vitTun);
+    double red,blue,green,alpha;
+    public int getColor() { /// 0==mov 1==green
+        //double red, blue, green, alpha, error;
+        double error;
+        error = 120;
+        red = colorsensor.red();
+        blue = colorsensor.blue();
+        green = colorsensor.green();
+        alpha = colorsensor.alpha();
+
+        if(green>95&&green>blue&&green>red){
+            return 2;
+        }
+        if(red>green||blue>green)
+            return 1;
+
+        return 0;
+
     }
 
 
