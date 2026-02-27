@@ -30,9 +30,9 @@ import com.pedropathing.geometry.Pose;import com.pedropathing.paths.PathConstrai
 import java.util.List;
 
 
-@Autonomous(name = "AUTO Close R - 9 balls", group = "Autonomous")
+@Autonomous(name = "AUTO Far R - 9 balls", group = "Autonomous")
 @Configurable  // Panels
-public class AutonomyCloseRed extends OpMode {
+public class FarRed extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
     public Follower follower; // Pedro Pathing follower instance
     private int pathState; // Current autonomous path state (state machine)
@@ -498,7 +498,8 @@ public class AutonomyCloseRed extends OpMode {
                     pathtime.reset();
                 }
                 break;
-            case 8:if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+            case 8:
+                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
                 follower.followPath(paths.Path6);
                 pathState = 9;
                 pathtime.reset();

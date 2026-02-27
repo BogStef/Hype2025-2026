@@ -498,8 +498,8 @@ public class TeleOpNou2 extends LinearOpMode {
         }
         lastSquare = currentSquare;
         if (toggle_tun) {
-            tun1.setVelocity(v1);
-            tun2.setVelocity(v2);
+            tun1.setPower(1); ////////////CHANGE TODO
+            tun2.setPower(1);/////////////CHANGE TODO
         } else {
             tun1.setVelocity(0);
             tun2.setVelocity(0);

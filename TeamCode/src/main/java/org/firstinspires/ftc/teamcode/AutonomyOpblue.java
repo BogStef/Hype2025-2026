@@ -30,7 +30,7 @@ import com.pedropathing.geometry.Pose;import com.pedropathing.paths.PathConstrai
 import java.util.List;
 
 
-@Autonomous(name = "AUTO Close B - 9 balls", group = "Autonomous")
+@Autonomous(name = "AUTO Far B - 9 balls", group = "Autonomous")
 @Configurable  // Panels
 public class AutonomyOpblue extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
@@ -112,7 +112,6 @@ public class AutonomyOpblue extends OpMode {
         push_tun = hardwareMap.get(Servo.class,"push_tun");
         push_tun.setDirection(Servo.Direction.REVERSE);
 
-        follower = Constants.createFollower(hardwareMap);
 
         rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
 
@@ -178,6 +177,10 @@ public class AutonomyOpblue extends OpMode {
         telemetry.addData("needed order 2",neededOrder[2]);
         telemetry.addData("PathState",pathState);
         telemetry.addData("shootingstate",functionshootstate);
+        telemetry.addData("path state",pathState);
+        telemetry.addData("x",follower.getPose().getX());
+        telemetry.addData("y",follower.getPose().getY());
+        telemetry.update();
 
         distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
         if (motif_code == -1)
