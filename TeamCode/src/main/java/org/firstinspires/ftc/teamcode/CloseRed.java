@@ -77,24 +77,21 @@ public class CloseRed extends OpMode {
         intake = hardwareMap.get(DcMotor.class,"intake");
         push_tun = hardwareMap.get(Servo.class,"push_tun");
         rev = hardwareMap.get(Servo.class,"rev");
-        follower = Constants.createFollower(hardwareMap);
-        paths = new Paths(follower); // Build paths
 
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
         pathState = 0;
 
-        limelight = hardwareMap.get(Limelight3A.class, "Ethernet Device");///camera
-        limelight.setPollRateHz(120); // This sets how often we ask Limelight for data (100 times per second)
-        limelight.start(); // This tells Limelight to start looking!
-        limelight.pipelineSwitch(0);
+//        limelight = hardwareMap.get(Limelight3A.class, "Ethernet Device");///camera
+//        limelight.setPollRateHz(120); // This sets how often we ask Limelight for data (100 times per second)
+//        limelight.start(); // This tells Limelight to start looking!
+//        limelight.pipelineSwitch(0);
 
 
 
 
         tun1.setVelocityPIDFCoefficients(6.7,0,0.1,13.7);
         tun2.setVelocityPIDFCoefficients(6.7,0,0.1,13.7);
-        tun1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         tun1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         tun2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
@@ -113,6 +110,7 @@ public class CloseRed extends OpMode {
 
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(117.81,131, Math.toRadians(307)));
+        paths = new Paths(follower); // Build paths
 
         rangeSensor = hardwareMap.get(DistanceSensor.class, "rangeSensor");
 
@@ -123,44 +121,47 @@ public class CloseRed extends OpMode {
     boolean intakeSort = false;
     boolean secondRevLeft = false;
     boolean thirdRevRight = false;
+    boolean intakeDone = false;
     ElapsedTime IntakeTimer = new ElapsedTime();
+    ElapsedTime IntakeOverideTimer = new ElapsedTime();
     void intake(){
         intake.setPower(.5);
         if (intakeSort) {
             distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
             ballDetected = distanceCM < distanta_proxsensorCM;
 
-            if (ballDetected && ballCount < 3 && IntakeTimer.milliseconds() > 400 && getColor() != -1) {
-                if (ballCount == 0) {
-                    if (getColor()==2) {
-                        revLeft();
-                        secondRevLeft = true;
-                    }
-                    else {
-                        revRight();
-                        secondRevLeft = false;
-                    }
-                }
-                else if (ballCount == 1) {
-                    if (secondRevLeft) {
-                        revLeft();
-                    }
-                    else {
-                        if (getColor() == 1) {
-                            thirdRevRight = true;
+            if ((ballDetected && !lastBallDetected && IntakeTimer.milliseconds() > 350 && getColor() != -1) || IntakeOverideTimer.milliseconds()>1500) {
+                switch (ballCount) {
+                    case 0: if (getColor() == 2) {
+                            revLeft();
+                            secondRevLeft = true;
+                        } else {
+                            revRight();
+                            secondRevLeft = false;
                         }
-                        else thirdRevRight = false;
-                        revRight();
-
-                    }
+                        ballCount++;
+                        break;
+                    case 1: if (secondRevLeft) {
+                                revLeft();
+                            } else {
+                                revRight();
+                                if (getColor() == 1) thirdRevRight = true;
+                                else thirdRevRight = false;
+                            }
+                        ballCount++;
+                        break;
+                    case 2: if (thirdRevRight) revRight();
+                        ballCount++;
+                        break;
+                    case 3: intakeDone = true;
                 }
-                else if (ballCount == 2 && thirdRevRight) revRight();
-                ballCount++;
                 IntakeTimer.reset();
+                IntakeOverideTimer.reset();
             }
             lastBallDetected = ballDetected;
         }
     }
+
     double distanceCM =0;
 
     @Override
@@ -178,6 +179,7 @@ public class CloseRed extends OpMode {
         telemetry.addData("needed order 2",neededOrder[2]);
         telemetry.addData("PathState",pathState);
         telemetry.addData("shootingstate",functionshootstate);
+        telemetry.addData("intake balls",ballCount);
 
         distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
         if (motif_code == -1)
@@ -419,6 +421,7 @@ public class CloseRed extends OpMode {
     }
 
     ElapsedTime pathtime = new ElapsedTime();
+    boolean doneOnce = false;
     public int autonomousPathUpdate() {
         switch (pathState) {
 
@@ -430,7 +433,7 @@ public class CloseRed extends OpMode {
                 pathState = 1;
                 break;
             case 1: ///sorteaza si trage
-                if(pathtime.milliseconds()>1200&&!follower.isBusy()){
+                if(pathtime.milliseconds()>1400&&!follower.isBusy()){
                     if(!sort_bgd_gata){
                         sort_bgd(450);
                         telemetry.addLine("bgdsorting type shi");
@@ -445,17 +448,20 @@ public class CloseRed extends OpMode {
                 break;
 
             case 2: ///merge la poz de luat mingi
-                if(pathtime.milliseconds()>1000&&!follower.isBusy()){
+                if(pathtime.milliseconds()>1500&&!follower.isBusy()){
                     follower.followPath(paths.Path2);
                     ballCount = 0;// reset pt intake
                     IntakeTimer.reset();
-                    intakeSort = true;
+                    intakeDone = false;
+                    IntakeOverideTimer.reset();
                     pathState = 3;
                     pathtime.reset();
                 }
                 break;
             case 3: /// ia mingi
                 if(pathtime.milliseconds()>300&&!follower.isBusy()){
+                    IntakeOverideTimer.reset();
+                    intakeSort = true;
                     follower.followPath(paths.Path3);
                     pathState=4;
                     pathtime.reset();
@@ -463,16 +469,23 @@ public class CloseRed extends OpMode {
                 }
                 break;
             case 4: ///merge la pos de tras mingi
-                if(pathtime.milliseconds()>4000&&!follower.isBusy()){
-                    follower.followPath(paths.Path4);
-                    sort_bgd_reset((byte)2,(byte)1,(byte)1);
-                    pathState = 5;
-                    pathtime.reset();
+                if(pathtime.milliseconds()>2700&&!follower.isBusy()){
+                    if (!doneOnce) {
+                        IntakeOverideTimer.reset();
+                        follower.followPath(paths.Path4);
+                        sort_bgd_reset((byte) 2, (byte) 1, (byte) 1);
+                        doneOnce=true;
+                    }
+                    if (intakeDone) {
+                        doneOnce=false;
+                        pathState = 5;
+                        pathtime.reset();
+                        intakeSort = false;
+                    }
                 }
                 break;
             case 5: ///sort si trage
-                if(pathtime.milliseconds()>1500&&!follower.isBusy()){
-                    intakeSort = false;
+                if(pathtime.milliseconds()>500&&!follower.isBusy()){
                     if(!sort_bgd_gata){
                         sort_bgd(450);
                         telemetry.addLine("bgdsorting type shi");
@@ -491,35 +504,42 @@ public class CloseRed extends OpMode {
                 }
                 break;
             case 7:/// merge la pozitia de luat mingi 2
-                if(pathtime.milliseconds()>1500&&!follower.isBusy()){
+                if(pathtime.milliseconds()>1200&&!follower.isBusy()){
                     IntakeTimer.reset();
                     ballCount = 0;
-
+                    intakeDone=false;
+                    IntakeOverideTimer.reset();
                     follower.followPath(paths.Path5);
                     pathState = 8;
                     pathtime.reset();
                 }
                 break;
             case 8:
-                if(pathtime.milliseconds()>900&&!follower.isBusy()){ /// ia mingi 2
-                    intakeSort = true;
+                if(pathtime.milliseconds()>700&&!follower.isBusy()){ /// ia mingi 2
                     sort_bgd_reset((byte)2,(byte)1,(byte)1);
-
-                follower.followPath(paths.Path6);
-                pathState = 9;
-                pathtime.reset();
-            }
+                    intakeSort = true;
+                    IntakeOverideTimer.reset();
+                    follower.followPath(paths.Path6);
+                    pathState = 9;
+                    pathtime.reset();
+                }
                 break;
 
-            case 9:if(pathtime.milliseconds()>3000&&!follower.isBusy()){ /// merge la tras
-                follower.followPath(paths.Path7);
-                pathState = 10;
-                pathtime.reset();
+            case 9:if(pathtime.milliseconds()>2700&&!follower.isBusy()){ /// merge la tras
+                if (!doneOnce) {
+                    follower.followPath(paths.Path7);
+                    doneOnce=true;
+                }
+                if (intakeDone) {
+                    doneOnce = false;
+                    pathState = 10;
+                    pathtime.reset();
+                    intakeSort = false;
+                }
             }
                 break;
             case 10:///trage
-                if(!follower.isBusy()&&pathtime.milliseconds()>1500){
-                    intakeSort = false;
+                if(!follower.isBusy()&&pathtime.milliseconds()>1200){
                     if(!sort_bgd_gata){
                         sort_bgd(450);
                         telemetry.addLine("bgdsorting type shi");
@@ -530,11 +550,13 @@ public class CloseRed extends OpMode {
                         pathState =11;
                     }
                 }
-            case 11:
-                if(!follower.isBusy()&&pathtime.milliseconds()>4000){
+                break;
+            case 11: ///iese de pe linie
+                if(!follower.isBusy()&&pathtime.milliseconds()>500){
                     follower.followPath(paths.Path8);
                     pathState = 12;
                 }
+                break;
             case 12:
                 telemetry.addLine("GATA AUTO");
                 break;

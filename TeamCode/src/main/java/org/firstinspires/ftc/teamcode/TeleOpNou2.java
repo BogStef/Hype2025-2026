@@ -248,7 +248,7 @@ public class TeleOpNou2 extends LinearOpMode {
         drspa.setPower(drspapwr*maxspeed);
     }
 
-    double kP = 0.027;
+    double kP = 0.03;
     double error = 0;
     double lastError = 0;
     double angleTolerance = .1;
@@ -302,12 +302,12 @@ public class TeleOpNou2 extends LinearOpMode {
         }
     }
 
-    final double maxspeed = 0.7;
+    final double maxspeed = 1;
     boolean pushTunInit = false;
     double speed,turn,strafe;
     public void run() {///TODO clean this up
         if (!pushTunInit) {
-            push_tun.setPosition(0.80);
+            push_tun.setPosition(0.73);
             pushTunInit=true;
         }
         boolean isTriggerPressedb = gamepad1.circle;
@@ -582,13 +582,13 @@ public class TeleOpNou2 extends LinearOpMode {
 
             if (ballDetected && !lastBallDetected && ballCount < 2 && IntakeTimer.milliseconds() > 400) {
                 revLeft();   // muta revolver o poziție
-                gamepad2.rumble(600);
-                gamepad1.rumble(600);
+                //gamepad2.rumble(600);
+                //gamepad1.rumble(600);
                 ballCount++;
                 IntakeTimer.reset();
                 rumbleDone = false;
             }
-            if(ballCount==2 && ballDetected && !rumbleDone){
+            if(ballCount==2 && ballDetected && !lastBallDetected && !rumbleDone){
                 gamepad1.rumble(1200);
                 gamepad2.rumble(1200);
                 rumbleDone=true;
@@ -739,14 +739,14 @@ public class TeleOpNou2 extends LinearOpMode {
 
         switch(functionshootstate){
             case 0: // start shoot
-                push_tun.setPosition(0); // retract
+                push_tun.setPosition(0.1); // retract
                 shootTimer.reset();       // reset timer once
                 functionshootstate = 1;
                 break;
 
             case 1: // extend after 200ms
                 if(shootTimer.milliseconds() > 200){
-                    push_tun.setPosition(0.80); // extend
+                    push_tun.setPosition(0.73); // extend
                     functionshootstate = 2;
                 }
                 break;
