@@ -450,6 +450,7 @@ public class FarRed extends OpMode {
                     follower.followPath(paths.Path2);
                     ballCount = 0;// reset pt intake
                     IntakeTimer.reset();
+                    intakeSort = true;
                     pathState = 3;
                     pathtime.reset();
                 }
@@ -457,7 +458,6 @@ public class FarRed extends OpMode {
             case 3: /// ia mingi
                 if(pathtime.milliseconds()>500&&!follower.isBusy()){
                     follower.followPath(paths.Path3);
-                    intakeSort = true;
                     pathState=4;
                     pathtime.reset();
 

@@ -376,7 +376,7 @@ public class TeleOpNou2 extends LinearOpMode {
             imu.resetYaw();
         }
 
-        intake(.9); /// triangle
+        intake(.7); /// triangle
 
         if (gamepad2.right_trigger > 0.3 && !storage_basic_running) { /// pornim storage basic
             storage_basic_running = true;
@@ -416,21 +416,27 @@ public class TeleOpNou2 extends LinearOpMode {
         // driver 1 apasa pe left trigger
         allign(-1.5);
         ////////////////
+        /// ///////////
 
 
         calculateTrueTa();
         calculateTrueTx();
-        double const1 =  290, const2 = 1000;
+        double const1 =  610, const2 = 1150;// foste valori 290 si 1000
         if(trueTa!=0){
             vitTun = const1/trueTa + const2;
-            vitTun2 = const1/trueTa +const2+400;
+            if(trueTa<0.5) /// daca e departe
+                vitTun2 = const1/trueTa +const2+1200;
+            else /// daca e aproape
+                vitTun2 = const1/trueTa +const2 + 600;
+
         }
         else {
             vitTun = const2;
-            vitTun2 = const2+845;
+            vitTun2 = const2+1000;
         }
 
         telemetry.addData("vittun",vitTun);
+        telemetry.addData("vittunfinal",vittun1_final);
 
 
         tun(vitTun,vitTun2);
@@ -476,10 +482,10 @@ public class TeleOpNou2 extends LinearOpMode {
         telemetry.addData("motif",motif_code);
         telemetry.addData("sorting",sort);
         telemetry.addData("sorting state",sortState);
-        telemetry.addData("motif switch",motif_switch);
-        telemetry.addData("ball 1",orderBall[0]);
-        telemetry.addData("ball 2",orderBall[1]);
-        telemetry.addData("ball 3",orderBall[2]);
+//        telemetry.addData("motif switch",motif_switch);
+//        telemetry.addData("ball 1",orderBall[0]);
+//        telemetry.addData("ball 2",orderBall[1]);
+//        telemetry.addData("ball 3",orderBall[2]);
         telemetry.addData("ready to shoot",readytoshoot);
         telemetry.addData("shoot state",shootState);
         telemetry.addData("TA",trueTa);
@@ -490,16 +496,27 @@ public class TeleOpNou2 extends LinearOpMode {
     }
 
     boolean lastSquare = false, lastLeftArrow = false, lastRightArrow = false; // llA si lrA sunt temp pt testat
-
+    double vittun1_final = 0;
+    double vittun2_final = 0;
     void tun(double v1,double v2) {
         boolean currentSquare = gamepad2.square;
+
         if (currentSquare && !lastSquare) {
             toggle_tun = !toggle_tun;
+            vittun1_final = v1;
+            vittun2_final = v2;
+
         }
         lastSquare = currentSquare;
+
+        if (gamepad2.circleWasPressed()) {
+            vittun1_final = v1;
+            vittun2_final = v2;
+        }
+
         if (toggle_tun) {
-            tun1.setPower(1); ////////////CHANGE TODO
-            tun2.setPower(1);/////////////CHANGE TODO
+            tun1.setVelocity(vittun1_final);
+            tun2.setVelocity(vittun2_final);
         } else {
             tun1.setVelocity(0);
             tun2.setVelocity(0);
@@ -527,6 +544,7 @@ public class TeleOpNou2 extends LinearOpMode {
     ElapsedTime IntakeTimer = new ElapsedTime();
     ElapsedTime IntakeReverseTimer = new ElapsedTime();
     int intakeReverseDelay = 3000;
+    boolean rumbleDone = true;
 
     void intake(double vit) {
 
@@ -568,11 +586,12 @@ public class TeleOpNou2 extends LinearOpMode {
                 gamepad1.rumble(600);
                 ballCount++;
                 IntakeTimer.reset();
+                rumbleDone = false;
             }
-            if(ballCount>=3){
+            if(ballCount==2 && ballDetected && !rumbleDone){
                 gamepad1.rumble(1200);
                 gamepad2.rumble(1200);
-
+                rumbleDone=true;
             }
 
 

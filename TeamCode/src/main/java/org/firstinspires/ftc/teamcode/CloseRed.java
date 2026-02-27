@@ -125,7 +125,7 @@ public class CloseRed extends OpMode {
     boolean thirdRevRight = false;
     ElapsedTime IntakeTimer = new ElapsedTime();
     void intake(){
-        intake.setPower(.4);
+        intake.setPower(.5);
         if (intakeSort) {
             distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
             ballDetected = distanceCM < distanta_proxsensorCM;
@@ -183,9 +183,9 @@ public class CloseRed extends OpMode {
         if (motif_code == -1)
             motif_code = motif(); //cauta motif
         calculateTrueTa();
-        double const2 = 10000;
-        vitTun = const2;
-        vitTun2 = const2+4000;
+        double const2 = 2000;
+        vitTun = 1150;
+        vitTun2 = 1850;
         if (startingPosition) {
             rev.setPosition(revpos1);
             startingPosition=false;
@@ -260,7 +260,7 @@ public class CloseRed extends OpMode {
         public PathChain Path4;
         public PathChain Path5;
         public PathChain Path6;
-        public PathChain Path7;
+        public PathChain Path7,Path8;
 
 
         public Paths(Follower follower) {
@@ -272,7 +272,7 @@ public class CloseRed extends OpMode {
                                     new Pose(92, 85) /// shoot
                             )
                     )
-                    .setLinearHeadingInterpolation(Math.toRadians(307), Math.toRadians(225))
+                    .setLinearHeadingInterpolation(Math.toRadians(307), Math.toRadians(230))
                     .build();
 
             Path2 = follower.pathBuilder()/// poz pregatire luat bile
@@ -282,14 +282,14 @@ public class CloseRed extends OpMode {
                                     new Pose(94, 90)
                             )
                     )
-                    .setLinearHeadingInterpolation(Math.toRadians(225), Math.toRadians(0))
+                    .setLinearHeadingInterpolation(Math.toRadians(230), Math.toRadians(0))
                     .build();
 
             Path3 = follower.pathBuilder()/// poz luat bile
                     .addPath(
                             new BezierLine(
                                     new Pose(94, 90),
-                                    new Pose(120, 90)
+                                    new Pose(105, 90)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
@@ -298,11 +298,11 @@ public class CloseRed extends OpMode {
             Path4 = follower.pathBuilder()/// poz tras
                     .addPath(
                             new BezierLine(
-                                    new Pose(120, 90),
+                                    new Pose(110, 90),
                                     new Pose(93, 85)
                             )
                     )
-                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(225))
+                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(230))
                     .build();
             Path5 = follower.pathBuilder().addPath( /// poz preg luat mingi 2
                             new BezierLine(
@@ -310,7 +310,7 @@ public class CloseRed extends OpMode {
 
                                     new Pose(87.183, 65)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(225), Math.toRadians(0))
+                    ).setLinearHeadingInterpolation(Math.toRadians(230), Math.toRadians(0))
 
                     .build();
 
@@ -330,12 +330,21 @@ public class CloseRed extends OpMode {
 
                                     new Pose(97, 85)
                             )
-                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(225))
+                    ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(230))
+
+                    .build();
+            Path8 = follower.pathBuilder().addPath( ///// park
+                            new BezierLine(
+                                    new Pose(97, 85),
+
+                                    new Pose(90, 125)
+                            )
+                    ).setLinearHeadingInterpolation(Math.toRadians(230), Math.toRadians(0))
 
                     .build();
         }
     }
-    public double distanta_proxsensorCM=7.6;
+    public double distanta_proxsensorCM=6.7;
     boolean startingPosition = true;
     byte stor[] = {2,1,1}; //0 - tun , 1-intake, 2 - storage ///vmm
     byte shootingPos = 0;
@@ -421,7 +430,7 @@ public class CloseRed extends OpMode {
                 pathState = 1;
                 break;
             case 1: ///sorteaza si trage
-                if(pathtime.milliseconds()>900&&!follower.isBusy()){
+                if(pathtime.milliseconds()>1200&&!follower.isBusy()){
                     if(!sort_bgd_gata){
                         sort_bgd(450);
                         telemetry.addLine("bgdsorting type shi");
@@ -440,6 +449,7 @@ public class CloseRed extends OpMode {
                     follower.followPath(paths.Path2);
                     ballCount = 0;// reset pt intake
                     IntakeTimer.reset();
+                    intakeSort = true;
                     pathState = 3;
                     pathtime.reset();
                 }
@@ -447,14 +457,13 @@ public class CloseRed extends OpMode {
             case 3: /// ia mingi
                 if(pathtime.milliseconds()>300&&!follower.isBusy()){
                     follower.followPath(paths.Path3);
-                    intakeSort = true;
                     pathState=4;
                     pathtime.reset();
 
                 }
                 break;
             case 4: ///merge la pos de tras mingi
-                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+                if(pathtime.milliseconds()>4000&&!follower.isBusy()){
                     follower.followPath(paths.Path4);
                     sort_bgd_reset((byte)2,(byte)1,(byte)1);
                     pathState = 5;
@@ -502,7 +511,7 @@ public class CloseRed extends OpMode {
             }
                 break;
 
-            case 9:if(pathtime.milliseconds()>1100&&!follower.isBusy()){ /// merge la tras
+            case 9:if(pathtime.milliseconds()>3000&&!follower.isBusy()){ /// merge la tras
                 follower.followPath(paths.Path7);
                 pathState = 10;
                 pathtime.reset();
@@ -521,7 +530,13 @@ public class CloseRed extends OpMode {
                         pathState =11;
                     }
                 }
+            case 11:
+                if(!follower.isBusy()&&pathtime.milliseconds()>4000){
+                    follower.followPath(paths.Path8);
+                    pathState = 12;
+                }
             case 12:
+                telemetry.addLine("GATA AUTO");
                 break;
         }
 
@@ -608,8 +623,9 @@ public class CloseRed extends OpMode {
 
     void tun(double v1,double v2,boolean toggle_tun) {
         if (toggle_tun) {
-            tun1.setPower(1);
-            tun2.setPower(1);
+
+            tun1.setVelocity(v1);
+            tun2.setVelocity(v2);
         } else {
             tun1.setVelocity(0);
             tun2.setVelocity(0);
@@ -617,7 +633,7 @@ public class CloseRed extends OpMode {
     }
 
     double red,blue,green,alpha;
-    public int getColor() { /// 0==mov 1==green
+    public int getColor() {
         //double red, blue, green, alpha, error;
         double error;
         error = 120;
@@ -632,7 +648,7 @@ public class CloseRed extends OpMode {
         if(red>green||blue>green)
             return 1;
 
-        return 0;
+        return -1;
 
     }
 
