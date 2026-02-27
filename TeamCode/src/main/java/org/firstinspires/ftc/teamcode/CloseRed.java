@@ -291,7 +291,7 @@ public class CloseRed extends OpMode {
                     .addPath(
                             new BezierLine(
                                     new Pose(94, 90),
-                                    new Pose(105, 90)
+                                    new Pose(110, 90)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
@@ -320,7 +320,7 @@ public class CloseRed extends OpMode {
                             new BezierLine(
                                     new Pose(87.183, 65),
 
-                                    new Pose(108.000, 65)
+                                    new Pose(103.000, 65)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
 
@@ -328,7 +328,7 @@ public class CloseRed extends OpMode {
 
             Path7 = follower.pathBuilder().addPath( ///// tras
                             new BezierLine(
-                                    new Pose(108.000, 65),
+                                    new Pose(103.000, 65),
 
                                     new Pose(97, 85)
                             )
