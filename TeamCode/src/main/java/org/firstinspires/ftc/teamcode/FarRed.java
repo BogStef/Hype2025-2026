@@ -30,7 +30,7 @@ import com.pedropathing.geometry.Pose;import com.pedropathing.paths.PathConstrai
 import java.util.List;
 
 
-@Autonomous(name = "AUTO Far R - 9 balls", group = "Autonomous")
+@Autonomous(name = "AUTO Far R - preload + park human", group = "Autonomous")
 @Configurable  // Panels
 public class FarRed extends OpMode {
     private TelemetryManager panelsTelemetry; // Panels Telemetry instance
@@ -184,9 +184,9 @@ public class FarRed extends OpMode {
         if (motif_code == -1)
             motif_code = motif(); //cauta motif
         calculateTrueTa();
-        double const2 = 3500;
+        double const2 = 3650;
         vitTun = const2;
-        vitTun2 = const2+1100;
+        vitTun2 = const2+2350;
         if (startingPosition) {
             rev.setPosition(revpos1);
             startingPosition=false;
@@ -194,7 +194,7 @@ public class FarRed extends OpMode {
         }
 
         tun(vitTun,vitTun2,true);
-        intake();
+        //intake();
 
         switch (motif_code) {
             case 23:
@@ -433,92 +433,101 @@ public class FarRed extends OpMode {
             case 1: ///sorteaza si trage
                 if(pathtime.milliseconds()>300&&!follower.isBusy()){
                     if(!sort_bgd_gata){
-                        sort_bgd(300);
+                        sort_bgd(450);
                         telemetry.addLine("bgdsorting type shi");
                     }
                     if(sort_bgd_gata){
                         pathtime.reset();
                         sort_bgd_gata=false;
-                        pathState++;
+                        pathState=2;
                     }
 
                 }
                 break;
 
-            case 2: ///merge la poz de luat mingi
-                if(pathtime.milliseconds()>1200&&!follower.isBusy()){
-                    follower.followPath(paths.Path2);
-                    ballCount = 0;// reset pt intake
-                    IntakeTimer.reset();
-                    intakeSort = true;
+//            case 2: ///merge la poz de luat mingi
+//                if(pathtime.milliseconds()>1200&&!follower.isBusy()){
+//                    follower.followPath(paths.Path2);
+//                    ballCount = 0;// reset pt intake
+//                    IntakeTimer.reset();
+//                    intakeSort = true;
+//                    pathState = 3;
+//                    pathtime.reset();
+//                }
+//                break;
+            case 2:
+                if(!follower.isBusy()&&pathtime.milliseconds()>4000){
+                    follower.followPath(paths.Path8);
                     pathState = 3;
-                    pathtime.reset();
                 }
+            case 3:
+                telemetry.addLine("gata auto");
                 break;
-            case 3: /// ia mingi
-                if(pathtime.milliseconds()>500&&!follower.isBusy()){
-                    follower.followPath(paths.Path3);
-                    pathState=4;
-                    pathtime.reset();
 
-                }
-                break;
-            case 4: ///merge la pos de tras mingi
-                if(pathtime.milliseconds()>2500&&!follower.isBusy()){
-                    follower.followPath(paths.Path4);
-                    sort_bgd_reset((byte)2,(byte)1,(byte)1);
-                    pathState = 5;
-                    pathtime.reset();
-                }
-                break;
-            case 5: ///sort si trage
-                if(pathtime.milliseconds()>500&&!follower.isBusy()){
-                    intakeSort = false;
-                    if(!sort_bgd_gata){
-                        sort_bgd(300);
-                        telemetry.addLine("bgdsorting type shi");
-                    }
-                    if(sort_bgd_gata){
-                        pathtime.reset();
-                        sort_bgd_gata=false;
-                        pathState++;
-                    }
-                }
-                break;
-            case 6:
-                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
-                    pathState = 7;
-                    pathtime.reset();
-                }
-                break;
-            case 7:/// merge la pozitia de luat mingi 2
-                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
-                    follower.followPath(paths.Path5);
-                    pathState = 8;
-                    pathtime.reset();
-                }
-                break;
-            case 8:
-                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
-                follower.followPath(paths.Path6);
-                pathState = 9;
-                pathtime.reset();
-            }
-                break;
-            case 9:if(pathtime.milliseconds()>2000&&!follower.isBusy()){
-                follower.followPath(paths.Path7);
-                pathState = 10;
-                pathtime.reset();
-            }
-                break;
-            case 10:if(pathtime.milliseconds()>2000&&!follower.isBusy()) {
-                follower.followPath(paths.Path8);
-                pathState = 11;
-                pathtime.reset();
-                break;
-            }
-            case 11:
-                break;
+//            case 3: /// ia mingi
+//                if(pathtime.milliseconds()>500&&!follower.isBusy()){
+//                    follower.followPath(paths.Path3);
+//                    pathState=4;
+//                    pathtime.reset();
+//
+//                }
+//                break;
+//            case 4: ///merge la pos de tras mingi
+//                if(pathtime.milliseconds()>2500&&!follower.isBusy()){
+//                    follower.followPath(paths.Path4);
+//                    sort_bgd_reset((byte)2,(byte)1,(byte)1);
+//                    pathState = 5;
+//                    pathtime.reset();
+//                }
+//                break;
+//            case 5: ///sort si trage
+//                if(pathtime.milliseconds()>500&&!follower.isBusy()){
+//                    intakeSort = false;
+//                    if(!sort_bgd_gata){
+//                        sort_bgd(300);
+//                        telemetry.addLine("bgdsorting type shi");
+//                    }
+//                    if(sort_bgd_gata){
+//                        pathtime.reset();
+//                        sort_bgd_gata=false;
+//                        pathState++;
+//                    }
+//                }
+//                break;
+//            case 6:
+//                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+//                    pathState = 7;
+//                    pathtime.reset();
+//                }
+//                break;
+//            case 7:/// merge la pozitia de luat mingi 2
+//                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+//                    follower.followPath(paths.Path5);
+//                    pathState = 8;
+//                    pathtime.reset();
+//                }
+//                break;
+//            case 8:
+//                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+//                follower.followPath(paths.Path6);
+//                pathState = 9;
+//                pathtime.reset();
+//            }
+//                break;
+//            case 9:if(pathtime.milliseconds()>2000&&!follower.isBusy()){
+//                follower.followPath(paths.Path7);
+//                pathState = 10;
+//                pathtime.reset();
+//            }
+//                break;
+//            case 10:if(pathtime.milliseconds()>2000&&!follower.isBusy()) {
+//                follower.followPath(paths.Path8);
+//                pathState = 11;
+//                pathtime.reset();
+//                break;
+//            }
+//            case 11:
+//                break;
         }
 
         return pathState;

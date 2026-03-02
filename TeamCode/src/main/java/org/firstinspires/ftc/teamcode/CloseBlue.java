@@ -1,5 +1,6 @@
-
 package org.firstinspires.ftc.teamcode;
+import static java.lang.Thread.sleep;
+
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.LLStatus;
@@ -48,6 +49,7 @@ public class CloseBlue extends OpMode {
     public final double revpos1=0.06;
     public final double revpos2=0.45;
     public final double revpos3 = 0.82;
+    public final double revposIntermediar = 0.2; //todo schimbat cu pozitiile finale dupa ce e testat
 
     public DcMotor intake;
     public Limelight3A limelight;
@@ -77,7 +79,9 @@ public class CloseBlue extends OpMode {
         intake = hardwareMap.get(DcMotor.class,"intake");
         push_tun = hardwareMap.get(Servo.class,"push_tun");
         rev = hardwareMap.get(Servo.class,"rev");
-
+        ///
+        rev.setPosition(revposIntermediar);
+        ///
         panelsTelemetry.debug("Status", "Initialized");
         panelsTelemetry.update(telemetry);
         pathState = 0;
@@ -86,7 +90,6 @@ public class CloseBlue extends OpMode {
 //        limelight.setPollRateHz(120); // This sets how often we ask Limelight for data (100 times per second)
 //        limelight.start(); // This tells Limelight to start looking!
 //        limelight.pipelineSwitch(0);
-
 
 
 
@@ -107,7 +110,9 @@ public class CloseBlue extends OpMode {
 
         push_tun = hardwareMap.get(Servo.class,"push_tun");
         push_tun.setDirection(Servo.Direction.REVERSE);
-
+        ///
+        push_tun.setPosition(0.75);
+        ///
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(new Pose(26.19,131, Math.toRadians(-127)));
         paths = new Paths(follower); // Build paths
@@ -130,7 +135,7 @@ public class CloseBlue extends OpMode {
             distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
             ballDetected = distanceCM < distanta_proxsensorCM;
 
-            if ((ballDetected && !lastBallDetected && IntakeTimer.milliseconds() > 350 && getColor() != -1) || IntakeOverideTimer.milliseconds()>1500) {
+            if ((ballDetected && !lastBallDetected && IntakeTimer.milliseconds() > 350 && getColor() != -1) || IntakeOverideTimer.milliseconds()>450) {
                 switch (ballCount) {
                     case 0: if (getColor() == 2) {
                         revLeft();
@@ -188,13 +193,17 @@ public class CloseBlue extends OpMode {
         double const2 = 2000;
         vitTun = 1150;
         vitTun2 = 1850;
-        if (startingPosition) {
-            rev.setPosition(revpos1);
-            startingPosition=false;
-            push_tun.setPosition(0.75);
+        if(pathState==0||pathState==1||pathState==2)
+            tun(1000,4000,true);
+        if(pathState ==3||pathState==4||pathState==5||pathState==6){
+            tun(1100,4400,true);
         }
-
-        tun(vitTun,vitTun2,true);
+        if(pathState == 7||pathState==8||pathState==9||pathState==10){
+            tun(1200,4900,true);
+        }
+        if(pathState==11){
+            tun(0,0,false);
+        }
         intake();
 
         switch (motif_code) {
@@ -218,7 +227,7 @@ public class CloseBlue extends OpMode {
 
         }
         shoot();
-
+        telemetry.addData("nrrevleft",nr_revleft);
 
 
         /// BlueX = RedX
@@ -274,27 +283,27 @@ public class CloseBlue extends OpMode {
                             new BezierCurve(
                                     new Pose(26.19,131), /// start
                                     new Pose(54,107), /// intermediar
-                                    new Pose(52, 85) /// shoot
+                                    new Pose(48, 100) /// shoot
                             )
                     )
-                    .setLinearHeadingInterpolation(Math.toRadians(-127), Math.toRadians(-50))
+                    .setLinearHeadingInterpolation(Math.toRadians(-127), Math.toRadians(-45))
                     .build(); ///done
 
             Path2 = follower.pathBuilder()/// poz pregatire luat bile
                     .addPath(
                             new BezierLine(
-                                    new Pose(52, 85),
-                                    new Pose(50, 90)
+                                    new Pose(48, 100),
+                                    new Pose(55, 87)
                             )
                     )
-                    .setLinearHeadingInterpolation(Math.toRadians(-50), Math.toRadians(180))
+                    .setLinearHeadingInterpolation(Math.toRadians(-45), Math.toRadians(180))
                     .build(); ///done
 
             Path3 = follower.pathBuilder()/// poz luat bile
                     .addPath(
                             new BezierLine(
-                                    new Pose(50, 90),
-                                    new Pose(34, 90)
+                                    new Pose(55, 87),
+                                    new Pose(20, 83)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
@@ -303,8 +312,8 @@ public class CloseBlue extends OpMode {
             Path4 = follower.pathBuilder()/// poz tras
                     .addPath(
                             new BezierLine(
-                                    new Pose(34, 90),
-                                    new Pose(51, 85)
+                                    new Pose(20, 83),
+                                    new Pose(55, 85)
                             )
                     )
                     .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(-50))
@@ -312,9 +321,9 @@ public class CloseBlue extends OpMode {
 
             Path5 = follower.pathBuilder().addPath( /// poz preg luat mingi 2
                             new BezierLine(
-                                    new Pose(51, 85),
+                                    new Pose(55, 85),
 
-                                    new Pose(57.817, 65)
+                                    new Pose(58, 67)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(-50), Math.toRadians(180))
 
@@ -322,9 +331,9 @@ public class CloseBlue extends OpMode {
 
             Path6 = follower.pathBuilder().addPath( /// luat mingi 2
                             new BezierLine(
-                                    new Pose(56.817, 65),
+                                    new Pose(58, 67),
 
-                                    new Pose(41, 65)
+                                    new Pose(27, 59)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
 
@@ -332,20 +341,21 @@ public class CloseBlue extends OpMode {
 
             Path7 = follower.pathBuilder().addPath( ///// tras
                             new BezierLine(
-                                    new Pose(41, 65),
+                                    new Pose(27, 59),
 
-                                    new Pose(47, 85)
+                                    new Pose(60, 90)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(-50))
 
                     .build();
             Path8 = follower.pathBuilder().addPath( ///// park
                             new BezierLine(
-                                    new Pose(47, 85),
+                                    new Pose(60, 90),
 
-                                    new Pose(54, 125)
+                                    new Pose(30, 80)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(-50), Math.toRadians(180))
+
 
                     .build();
         }
@@ -360,7 +370,7 @@ public class CloseBlue extends OpMode {
     boolean sort_bgd_gata = false;
     int nr_revleft = 0;
     boolean shootanyway = false;
-
+    ElapsedTime revleftinplus = new ElapsedTime();
     void sort_bgd_reset(byte a,byte b,byte c){
         storagebgdShooting = false;
         bgdtimer.reset();
@@ -431,28 +441,37 @@ public class CloseBlue extends OpMode {
 
             case 0: /// pozitie de tras
                 follower.followPath(paths.Path1);
-
+                telemetry.addLine("pozitie de tras");
                 sort_bgd_reset((byte)2,(byte)1,(byte)1);
                 pathtime.reset();
                 pathState = 1;
                 break;
             case 1: ///sorteaza si trage
-                if(pathtime.milliseconds()>1400&&!follower.isBusy()){
-                    if(!sort_bgd_gata){
-                        sort_bgd(450);
-                        telemetry.addLine("bgdsorting type shi");
+                if(pathtime.milliseconds()>1200&&!follower.isBusy()){
+                    if (!doneOnce) {
+                        rev.setPosition(revpos1);
+                        doneOnce = true;
+                        break;
                     }
-                    if(sort_bgd_gata){
-                        pathtime.reset();
-                        sort_bgd_gata=false;
-                        pathState++;
+                    if(pathtime.milliseconds()>1100){
+                        if(!sort_bgd_gata){
+                            sort_bgd(400);
+                            telemetry.addLine("bgdsorting type shi");
+                        }
+                        if(sort_bgd_gata){
+                            pathtime.reset();
+                            sort_bgd_gata=false;
+                            pathState++;
+                            doneOnce=false;
+                        }
                     }
+
 
                 }
                 break;
 
             case 2: ///merge la poz de luat mingi
-                if(pathtime.milliseconds()>1500&&!follower.isBusy()){
+                if(pathtime.milliseconds()>1450&&!follower.isBusy()){
                     follower.followPath(paths.Path2);
                     ballCount = 0;// reset pt intake
                     IntakeTimer.reset();
@@ -463,17 +482,17 @@ public class CloseBlue extends OpMode {
                 }
                 break;
             case 3: /// ia mingi
-                if(pathtime.milliseconds()>300&&!follower.isBusy()){
+                if(pathtime.milliseconds()>900&&!follower.isBusy()){
                     IntakeOverideTimer.reset();
                     intakeSort = true;
-                    follower.followPath(paths.Path3);
+                    follower.followPath(paths.Path3,0.8,false);
                     pathState=4;
                     pathtime.reset();
 
                 }
                 break;
             case 4: ///merge la pos de tras mingi
-                if(pathtime.milliseconds()>2700&&!follower.isBusy()){
+                if(pathtime.milliseconds()>2000&&!follower.isBusy()){
                     if (!doneOnce) {
                         IntakeOverideTimer.reset();
                         follower.followPath(paths.Path4);
@@ -489,9 +508,9 @@ public class CloseBlue extends OpMode {
                 }
                 break;
             case 5: ///sort si trage
-                if(pathtime.milliseconds()>500&&!follower.isBusy()){
+                if(pathtime.milliseconds()>100&&!follower.isBusy()){
                     if(!sort_bgd_gata){
-                        sort_bgd(450);
+                        sort_bgd(400);
                         telemetry.addLine("bgdsorting type shi");
                     }
                     if(sort_bgd_gata){
@@ -508,7 +527,7 @@ public class CloseBlue extends OpMode {
                 }
                 break;
             case 7:/// merge la pozitia de luat mingi 2
-                if(pathtime.milliseconds()>1200&&!follower.isBusy()){
+                if(pathtime.milliseconds()>950&&!follower.isBusy()){
                     IntakeTimer.reset();
                     ballCount = 0;
                     intakeDone=false;
@@ -519,7 +538,7 @@ public class CloseBlue extends OpMode {
                 }
                 break;
             case 8:
-                if(pathtime.milliseconds()>700&&!follower.isBusy()){ /// ia mingi 2
+                if(pathtime.milliseconds()>300&&!follower.isBusy()){ /// ia mingi 2
                     sort_bgd_reset((byte)2,(byte)1,(byte)1);
                     intakeSort = true;
                     IntakeOverideTimer.reset();
@@ -529,7 +548,7 @@ public class CloseBlue extends OpMode {
                 }
                 break;
 
-            case 9:if(pathtime.milliseconds()>2700&&!follower.isBusy()){ /// merge la tras
+            case 9:if(pathtime.milliseconds()>1400&&!follower.isBusy()){ /// merge la tras
                 if (!doneOnce) {
                     follower.followPath(paths.Path7);
                     doneOnce=true;
@@ -543,9 +562,9 @@ public class CloseBlue extends OpMode {
             }
                 break;
             case 10:///trage
-                if(!follower.isBusy()&&pathtime.milliseconds()>1200){
+                if(!follower.isBusy()&&pathtime.milliseconds()>300){
                     if(!sort_bgd_gata){
-                        sort_bgd(450);
+                        sort_bgd(400);
                         telemetry.addLine("bgdsorting type shi");
                     }
                     if(sort_bgd_gata){

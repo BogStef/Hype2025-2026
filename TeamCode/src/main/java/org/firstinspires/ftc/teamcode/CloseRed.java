@@ -124,8 +124,12 @@ public class CloseRed extends OpMode {
     boolean intakeDone = false;
     ElapsedTime IntakeTimer = new ElapsedTime();
     ElapsedTime IntakeOverideTimer = new ElapsedTime();
+    boolean resetedautotime=false;
+    boolean intakeReverse = false;
     void intake(){
-        intake.setPower(.5);
+        if(intakeReverse)
+            intake.setPower(-.5);
+        else intake.setPower(.5);
         if (intakeSort) {
             distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
             ballDetected = distanceCM < distanta_proxsensorCM;
@@ -182,6 +186,9 @@ public class CloseRed extends OpMode {
         telemetry.addData("intake balls",ballCount);
 
         distanceCM = rangeSensor.getDistance(DistanceUnit.CM);
+        if(!resetedautotime){
+            autotime.reset();
+        }
         if (motif_code == -1)
             motif_code = motif(); //cauta motif
         calculateTrueTa();
@@ -193,8 +200,7 @@ public class CloseRed extends OpMode {
             startingPosition=false;
             push_tun.setPosition(0.75);
         }
-
-        tun(vitTun,vitTun2,true);
+        tun(1050,4800,true);
         intake();
 
         switch (motif_code) {
@@ -218,6 +224,10 @@ public class CloseRed extends OpMode {
 
         }
         shoot();
+
+        if(autotime.milliseconds()>28500){
+            pathState = 11;
+        }
 
 
 
@@ -318,9 +328,9 @@ public class CloseRed extends OpMode {
 
             Path6 = follower.pathBuilder().addPath( /// luat mingi 2
                             new BezierLine(
-                                    new Pose(87.183, 65),
+                                    new Pose(87.183,65),
 
-                                    new Pose(103.000, 65)
+                                    new Pose(120, 60)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
 
@@ -328,7 +338,7 @@ public class CloseRed extends OpMode {
 
             Path7 = follower.pathBuilder().addPath( ///// tras
                             new BezierLine(
-                                    new Pose(103.000, 65),
+                                    new Pose(120, 60),
 
                                     new Pose(97, 85)
                             )
@@ -339,7 +349,7 @@ public class CloseRed extends OpMode {
                             new BezierLine(
                                     new Pose(97, 85),
 
-                                    new Pose(90, 125)
+                                    new Pose(90, 134)
                             )
                     ).setLinearHeadingInterpolation(Math.toRadians(230), Math.toRadians(0))
 
@@ -421,6 +431,7 @@ public class CloseRed extends OpMode {
     }
 
     ElapsedTime pathtime = new ElapsedTime();
+    ElapsedTime autotime = new ElapsedTime();
     boolean doneOnce = false;
     public int autonomousPathUpdate() {
         switch (pathState) {
@@ -433,7 +444,7 @@ public class CloseRed extends OpMode {
                 pathState = 1;
                 break;
             case 1: ///sorteaza si trage
-                if(pathtime.milliseconds()>1400&&!follower.isBusy()){
+                if(pathtime.milliseconds()>1950&&!follower.isBusy()){
                     if(!sort_bgd_gata){
                         sort_bgd(450);
                         telemetry.addLine("bgdsorting type shi");
@@ -525,7 +536,7 @@ public class CloseRed extends OpMode {
                 }
                 break;
 
-            case 9:if(pathtime.milliseconds()>2700&&!follower.isBusy()){ /// merge la tras
+            case 9:if(pathtime.milliseconds()>850&&!follower.isBusy()){ /// merge la tras
                 if (!doneOnce) {
                     follower.followPath(paths.Path7);
                     doneOnce=true;
@@ -539,7 +550,7 @@ public class CloseRed extends OpMode {
             }
                 break;
             case 10:///trage
-                if(!follower.isBusy()&&pathtime.milliseconds()>1200){
+                if(!follower.isBusy()&&pathtime.milliseconds()>1100){
                     if(!sort_bgd_gata){
                         sort_bgd(450);
                         telemetry.addLine("bgdsorting type shi");
@@ -552,7 +563,7 @@ public class CloseRed extends OpMode {
                 }
                 break;
             case 11: ///iese de pe linie
-                if(!follower.isBusy()&&pathtime.milliseconds()>500){
+                if(!follower.isBusy()&&pathtime.milliseconds()>300){
                     follower.followPath(paths.Path8);
                     pathState = 12;
                 }
