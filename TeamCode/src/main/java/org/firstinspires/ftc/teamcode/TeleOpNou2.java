@@ -46,7 +46,6 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 
-@TeleOp(name="TeleOp - BUN")
 
 public class TeleOpNou2 extends LinearOpMode {
     public DcMotorEx drft, stft, drspa, stspa;
