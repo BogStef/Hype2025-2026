@@ -119,7 +119,6 @@ public class TeleOpNou2 extends LinearOpMode {
         imu.resetYaw();
         if (opModeIsActive()) {
             while (opModeIsActive()) {
-                // TODO BUG Press dpad_down on controller before dpad_up for the first time
                 run();
             }
         }
@@ -250,7 +249,7 @@ public class TeleOpNou2 extends LinearOpMode {
     double kP = 0.03;
     double error = 0;
     double lastError = 0;
-    double angleTolerance = .1;
+    double angleTolerance = 1.5;
     double kD = 0.006;
     double curTime = 0;
     double lastTime = 0;
@@ -304,7 +303,7 @@ public class TeleOpNou2 extends LinearOpMode {
     final double maxspeed = 1;
     boolean pushTunInit = false;
     double speed,turn,strafe;
-    public void run() {///TODO clean this up
+    public void run() {
         if (!pushTunInit) {
             push_tun.setPosition(0.73);
             pushTunInit=true;
@@ -420,13 +419,13 @@ public class TeleOpNou2 extends LinearOpMode {
 
         calculateTrueTa();
         calculateTrueTx();
-        double const1 =  610, const2 = 1150;// foste valori 290 si 1000
+        double const1 =  670, const2 = 900;//
         if(trueTa!=0){
             vitTun = const1/trueTa + const2;
             if(trueTa<0.5) /// daca e departe
-                vitTun2 = const1/trueTa +const2+1200;
+                vitTun2 = const1/trueTa +const2+1800;
             else /// daca e aproape
-                vitTun2 = const1/trueTa +const2 + 600;
+                vitTun2 = const1/trueTa +const2 + 700;
 
         }
         else {
@@ -436,9 +435,7 @@ public class TeleOpNou2 extends LinearOpMode {
 
         telemetry.addData("vittun",vitTun);
         telemetry.addData("vittunfinal",vittun1_final);
-
-
-        tun(vitTun,vitTun2);
+        tun(1000,4100);
 
 
 
@@ -514,8 +511,8 @@ public class TeleOpNou2 extends LinearOpMode {
         }
 
         if (toggle_tun) {
-            tun1.setVelocity(vittun1_final);
-            tun2.setVelocity(vittun2_final);
+            tun1.setVelocity(v1);
+            tun2.setVelocity(v2);
         } else {
             tun1.setVelocity(0);
             tun2.setVelocity(0);
