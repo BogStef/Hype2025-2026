@@ -32,7 +32,7 @@ public class MecanumDrive{
     }
     public void drive(boolean field,Gamepad gamepad){
         update_move(gamepad);
-        if(field){
+        if(!field){
             robot_drive(speed,turn,strafe,maxspeed);
         }
         else{

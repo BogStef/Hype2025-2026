@@ -15,7 +15,7 @@ public class Gyro {
     double lastHeading = 0;
 
     public Gyro(HardwareMap hardwareMap){
-        imu = hardwareMap.get(IMU.class, "imu");
+        imu = hardwareMap.get(IMU.class, "imu_expension");
         imu.initialize(
         new IMU.Parameters(new RevHubOrientationOnRobot(RevHubOrientationOnRobot.LogoFacingDirection.LEFT, RevHubOrientationOnRobot.UsbFacingDirection.DOWN))
         );
