@@ -1,4 +1,4 @@
-/**
+    /**
  * Top-level build file for ftc_app project.
  *
  * It is extraordinarily rare that you will ever need to edit this file.
@@ -21,6 +21,9 @@ allprojects {
     repositories {
         mavenCentral()
         google()
+    }
+    maven {
+        url = "https://mymaven.bylazar.com/releases"
     }
 }
 

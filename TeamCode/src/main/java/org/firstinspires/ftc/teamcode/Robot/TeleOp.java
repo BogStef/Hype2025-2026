@@ -28,7 +28,6 @@ public class TeleOp extends LinearOpMode {
         }
     }
     public void initi(){
-
         tun =new Tun();
         tun.initi(hardwareMap,1);
 
@@ -42,12 +41,12 @@ public class TeleOp extends LinearOpMode {
         intake_motor.initi(hardwareMap,true);
 
     }
-
     public void run(){
-        mecanumDrive.drive(false,gamepad1);//basic
+        mecanumDrive.drive(true,gamepad1);//basic
         intake.run(gamepad1); //triangle
         intake_motor.run(gamepad1);//circle
         tun.run(gamepad1);//square
+
         telemetry.addData("intake", intake.getToggle());
         telemetry.addData("intake motor",intake_motor.getToggle());
         telemetry.addData("tun",tun.getToggle());

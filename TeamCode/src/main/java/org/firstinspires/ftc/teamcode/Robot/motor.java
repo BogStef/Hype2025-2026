@@ -16,5 +16,5 @@ public class motor extends LinearOpMode {
 
     }
     public void run(){
-î
+
     }
