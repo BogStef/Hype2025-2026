@@ -1,4 +1,6 @@
 package org.firstinspires.ftc.teamcode.Robot;
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -6,16 +8,23 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.teamcode.Subsystems.Gyro;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake;
 import org.firstinspires.ftc.teamcode.Subsystems.MecanumDrive;
 import org.firstinspires.ftc.teamcode.Subsystems.Tun;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="TeleOp-test")
 public class TeleOp extends LinearOpMode {
     MecanumDrive mecanumDrive;
     Intake intake;
-    Intake intake_motor;
     Tun tun;
+
+    Follower follower;
+
+    public static Pose redfar_pose = new Pose(80.58, 9.37, Math.toRadians(90));
+
+    Gyro gyro;
     @Override
     public void runOpMode(){
         initi();
@@ -28,29 +37,54 @@ public class TeleOp extends LinearOpMode {
         }
     }
     public void initi(){
+        follower = Constants.createFollower(hardwareMap);
+        follower.setStartingPose(redfar_pose);
+
+
 
         tun =new Tun();
-        tun.initi(hardwareMap,1);
+        tun.initi(hardwareMap);
+
 
         mecanumDrive = new MecanumDrive();
         mecanumDrive.initi(hardwareMap);
 
         intake = new Intake();
-        intake.initi(hardwareMap,false);
+        intake.initi(hardwareMap);
 
-        intake_motor = new Intake();
-        intake_motor.initi(hardwareMap,true);
+        gyro = new Gyro(hardwareMap);
 
     }
 
-    public void run(){
-        mecanumDrive.drive(false,gamepad1);//basic
-        intake.run(gamepad1); //triangle
-        intake_motor.run(gamepad1);//circle
-        tun.run(gamepad1);//square
-        telemetry.addData("intake", intake.getToggle());
-        telemetry.addData("intake motor",intake_motor.getToggle());
-        telemetry.addData("tun",tun.getToggle());
+    public void run() {
+
+        mecanumDrive.drive(true, gamepad1);
+        intake.run(gamepad1);
+        tun.run(gamepad1, gamepad2);
+
+        follower.update();
+
+        Pose pose = follower.getPose();
+
+        if(gamepad1.square){
+            tun.tun_servo.setPosition(0.5);
+        }
+        if(gamepad1.circle){
+            tun.tun_servo.setPosition(-0.5);
+        }
+        tun.limitCheck();
+        telemetry.addData("X", pose.getX());
+        telemetry.addData("Y", pose.getY());
+        telemetry.addData("Heading", Math.toDegrees(pose.getHeading()));
+
+        telemetry.addData("Rotation", tun.getRotation());
+        telemetry.addData("angle", tun.getRotation()/tun.gear_ratio);
+        telemetry.addData("Lansare", tun.getLansare());
+        telemetry.addData("Gyro", Math.toDegrees(gyro.getHeading()));
+        telemetry.addData("ServoTUn: ", tun.getServo());
+        telemetry.addData("transfer1: ", tun.transfer1.getPosition());
+        telemetry.addData("transfer2: ", tun.transfer2.getPosition());
         telemetry.update();
     }
+
 }

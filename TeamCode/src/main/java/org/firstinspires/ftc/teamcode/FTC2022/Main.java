@@ -21,8 +21,8 @@ public class Main extends LinearOpMode {
     }
     public void initi(){
 
-        cleste = new Cleste(hardwareMap);
-
+        cleste = new Cleste();
+        cleste.init(hardwareMap);
 
         brat = new Brat(); // TODO: nu schimbam init cu un constructor?
         brat.init(hardwareMap);

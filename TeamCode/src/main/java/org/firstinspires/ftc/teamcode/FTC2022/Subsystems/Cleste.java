@@ -1,4 +1,4 @@
-+=package org.firstinspires.ftc.teamcode.FTC2022.Subsystems;
+package org.firstinspires.ftc.teamcode.FTC2022.Subsystems;
 
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -14,7 +14,7 @@ public class Cleste {
     private double position = 0.2;
     private double initPos=0;
 
-    public Cleste(HardwareMap hardwareMap) {
+    public void init(HardwareMap hardwareMap) {
         cleste = hardwareMap.get(Servo.class,"intake");
         cleste.setDirection(Servo.Direction.FORWARD);
         cleste.setPosition(initPos);
