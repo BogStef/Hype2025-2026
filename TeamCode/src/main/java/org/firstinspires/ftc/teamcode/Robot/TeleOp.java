@@ -61,7 +61,7 @@ public class TeleOp extends LinearOpMode {
 
     public void run() {
 
-        mecanumDrive.drive(false, gamepad1);
+        mecanumDrive.drive(true, gamepad1);
         intake.run(gamepad1);
         tun.run(gamepad1, gamepad2);
 

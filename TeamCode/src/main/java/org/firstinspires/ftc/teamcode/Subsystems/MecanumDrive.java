@@ -22,10 +22,10 @@ public class MecanumDrive{
         stspa = hardwareMap.get(DcMotorEx.class, "stspa");
         drspa = hardwareMap.get(DcMotorEx.class, "drspa");
 
-        stft.setDirection(DcMotorSimple.Direction.FORWARD);
-        drft.setDirection(DcMotorSimple.Direction.REVERSE);///todo
-        drspa.setDirection(DcMotorSimple.Direction.REVERSE);
-        stspa.setDirection(DcMotorSimple.Direction.FORWARD);
+        stft.setDirection(DcMotorSimple.Direction.REVERSE);
+        drft.setDirection(DcMotorSimple.Direction.FORWARD);///todo
+        drspa.setDirection(DcMotorSimple.Direction.FORWARD);
+        stspa.setDirection(DcMotorSimple.Direction.REVERSE);
 
         stft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         drft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -48,7 +48,7 @@ public class MecanumDrive{
 
     private void update_move(Gamepad gamepad){
         speed = -gamepad.left_stick_y;
-        turn = -gamepad.right_stick_x;
+        turn = gamepad.right_stick_x;
         strafe = gamepad.left_stick_x;
         heading = gyro.getHeading();
     }
