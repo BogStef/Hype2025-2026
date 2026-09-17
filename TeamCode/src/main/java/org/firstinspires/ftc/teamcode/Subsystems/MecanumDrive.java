@@ -99,6 +99,7 @@ public class MecanumDrive{
          stspa.setPower(stspapwr*maxspeed);
          drspa.setPower(drspapwr*maxspeed);
     }
+
     public void testStrafe() {
         stft.setPower(1);
         drft.setPower(-1);

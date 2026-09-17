@@ -19,17 +19,20 @@ android {
     namespace = 'org.firstinspires.ftc.teamcode'
 
 
-    compileSdk 35
+
     defaultConfig {
         minSdk 24
     }
 
     packagingOptions {
+        jniLibs {
+            pickFirsts += ['**/*.so']
+        }
         jniLibs.useLegacyPackaging true
     }
 }
 
 dependencies {
     implementation project(':FtcRobotController')
-    implementation "com.bylazar:<PRESET>:<VERSION>"
+    annotationProcessor files('lib/OpModeAnnotationProcessor.jar')
 }

@@ -16,7 +16,7 @@ public class Intake {
     public boolean toggle;
 
     public void initi(HardwareMap hardwareMap){
-        this.useMotor = useMotor;
+        //this.useMotor = useMotor;
         intake = hardwareMap.get(DcMotor.class,"intake");
         transfer = hardwareMap.get(DcMotor.class,"transfer");
         intake.setDirection(DcMotorSimple.Direction.REVERSE);

@@ -12,6 +12,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 public class Tun {
     private DcMotorEx rotatie_tun;
 
+
     public Servo tun_servo;
     public Servo transfer1,transfer2;//dreapta, stanga
     private DcMotorEx lansare_tun;
@@ -80,12 +81,12 @@ public class Tun {
 
         if(gamepad.dpad_right){
             //servo_tun_pos+=0.005;
-            rotatie_tun.setPower(-0.2);
+            rotatie_tun.setPower(-0.4);
         }
 
         if(gamepad.dpad_left){
             //servo_tun_pos-=0.005;
-            rotatie_tun.setPower(0.2);
+            rotatie_tun.setPower(0.4);
         }
         if(gamepad.dpad_up){
             lansare_velocity+=100;
@@ -135,8 +136,8 @@ public class Tun {
     public void limitCheck() { //TODO add so it stops it from trying to go that way
         double rotatie = rotatie_tun.getCurrentPosition();
         if (rotatie>=max_stanga)
-            rotatie_tun.setPower(-0.2);
+            rotatie_tun.setPower(-0.5);
         else if (rotatie<=max_dreapta * -1)
-            rotatie_tun.setPower(0.2);
+            rotatie_tun.setPower(0.5);
     }
 }

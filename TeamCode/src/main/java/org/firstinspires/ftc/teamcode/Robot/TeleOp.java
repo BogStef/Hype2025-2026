@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Robot;
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.Pose;
+import com.pedropathing.math.Pose;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -20,30 +21,30 @@ public class TeleOp extends LinearOpMode {
     Intake intake;
     Tun tun;
 
-    Follower follower;
+        Follower follower;
+        public static Pose redfar_pose = new Pose(80.58, 9.37, Math.toRadians(90));
 
-    public static Pose redfar_pose = new Pose(80.58, 9.37, Math.toRadians(90));
+        Gyro gyro;
+        GoBildaPinpointDriver pinpoint;
+        @Override
 
-    Gyro gyro;
-    @Override
-    public void runOpMode(){
-        initi();
-        telemetry.addLine("initialized");
-        telemetry.update();
-        waitForStart();
+        public void runOpMode(){
+            initi();
+            telemetry.addLine("initialized");
+            telemetry.update();
+            waitForStart();
 
-        while(opModeIsActive()){
-            run();
+            while(opModeIsActive()){
+                run();
+            }
         }
-    }
-    public void initi(){
-        follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(redfar_pose);
+        public void initi(){
+            follower = Constants.create(hardwareMap);
+            follower.setPose(redfar_pose);
 
 
-
-        tun =new Tun();
-        tun.initi(hardwareMap);
+            tun =new Tun();
+            tun.initi(hardwareMap);
 
 
         mecanumDrive = new MecanumDrive();
@@ -51,20 +52,22 @@ public class TeleOp extends LinearOpMode {
 
         intake = new Intake();
         intake.initi(hardwareMap);
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
 
         gyro = new Gyro(hardwareMap);
+
 
     }
 
     public void run() {
 
-        mecanumDrive.drive(true, gamepad1);
+        mecanumDrive.drive(false, gamepad1);
         intake.run(gamepad1);
         tun.run(gamepad1, gamepad2);
 
         follower.update();
 
-        Pose pose = follower.getPose();
+        Pose pose = follower.pose();
 
         if(gamepad1.square){
             tun.tun_servo.setPosition(0.5);
@@ -73,15 +76,13 @@ public class TeleOp extends LinearOpMode {
             tun.tun_servo.setPosition(-0.5);
         }
         tun.limitCheck();
-        telemetry.addData("X", pose.getX());
-        telemetry.addData("Y", pose.getY());
-        telemetry.addData("Heading", Math.toDegrees(pose.getHeading()));
-
-        telemetry.addData("Rotation", tun.getRotation());
-        telemetry.addData("angle", tun.getRotation()/tun.gear_ratio);
+        telemetry.addData("x",pose.x());
+        telemetry.addData("y",pose.y());
+        telemetry.addData("Rotation", Math.toDegrees(tun.getRotation()));
+        telemetry.addData("angle", Math.toDegrees(tun.getRotation()/tun.gear_ratio));
         telemetry.addData("Lansare", tun.getLansare());
         telemetry.addData("Gyro", Math.toDegrees(gyro.getHeading()));
-        telemetry.addData("ServoTUn: ", tun.getServo());
+        telemetry.addData("ServoTun: ", tun.getServo());
         telemetry.addData("transfer1: ", tun.transfer1.getPosition());
         telemetry.addData("transfer2: ", tun.transfer2.getPosition());
         telemetry.update();
