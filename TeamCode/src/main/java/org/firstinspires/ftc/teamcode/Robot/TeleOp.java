@@ -21,30 +21,30 @@ public class TeleOp extends LinearOpMode {
     Intake intake;
     Tun tun;
 
-        Follower follower;
-        public static Pose redfar_pose = new Pose(80.58, 9.37, Math.toRadians(90));
+    Follower follower;
+    public static Pose redfar_pose = new Pose(80.58, 9.37, Math.toRadians(90));
 
-        Gyro gyro;
-        GoBildaPinpointDriver pinpoint;
-        @Override
+    Gyro gyro;
+    GoBildaPinpointDriver pinpoint;
+    @Override
 
-        public void runOpMode(){
-            initi();
-            telemetry.addLine("initialized");
-            telemetry.update();
-            waitForStart();
+    public void runOpMode(){
+        initi();
+        telemetry.addLine("initialized");
+        telemetry.update();
+        waitForStart();
 
-            while(opModeIsActive()){
-                run();
-            }
+        while(opModeIsActive()){
+            run();
         }
-        public void initi(){
-            follower = Constants.create(hardwareMap);
-            follower.setPose(redfar_pose);
+    }
+    public void initi(){
+        follower = Constants.create(hardwareMap);
+        follower.setPose(redfar_pose);
 
 
-            tun =new Tun();
-            tun.initi(hardwareMap);
+        tun =new Tun();
+        tun.initi(hardwareMap);
 
 
         mecanumDrive = new MecanumDrive();
@@ -75,10 +75,10 @@ public class TeleOp extends LinearOpMode {
         if(gamepad1.circle){
             tun.tun_servo.setPosition(-0.5);
         }
-        tun.limitCheck();
+        //tun.allignTun(pose.heading(), pose.x(), pose.y(), telemetry);
         telemetry.addData("x",pose.x());
         telemetry.addData("y",pose.y());
-        telemetry.addData("Rotation", Math.toDegrees(tun.getRotation()));
+        telemetry.addData("heading", Math.toDegrees(pose.heading()));
         telemetry.addData("angle", Math.toDegrees(tun.getRotation()/tun.gear_ratio));
         telemetry.addData("Lansare", tun.getLansare());
         telemetry.addData("Gyro", Math.toDegrees(gyro.getHeading()));
