@@ -25,7 +25,11 @@ public class Tun {
 
     private double pl, il, dl, fl;
     private double pr, ir, dr, fr;
-
+    private double lastError = 0;
+    private com.qualcomm.robotcore.util.ElapsedTime pidTimer = new com.qualcomm.robotcore.util.ElapsedTime();
+    public static double kp = 0.022;
+    public static double ki = 0.0;
+    public static double kd = 0.0015;
     private boolean lastRightTriggerState = false;
 
     private double servo_tun_pos=0;
@@ -133,7 +137,7 @@ public class Tun {
     }
 
     private double length = 144.0;
-    public void allignTun(double robot_heading, double robot_x, double robot_y, Telemetry telemetry){ // (0,0) stanga jos, (144, 144) red
+    public void allignTun(double robot_heading, double robot_x, double robot_y, Telemetry telemetry){ //TODO tune to be faster/smother
         double delta_x = length - robot_x;
         double delta_y = length - robot_y;
         double field_angle_radians = Math.atan2(delta_y, delta_x);
@@ -143,12 +147,17 @@ public class Tun {
         double error = target_angle_degrees - current_angle_degrees;
         while (error > 180)  error -= 360;
         while (error <= -180) error += 360;
-        double kp = 0.018;
-        double power = kp * error;
-        double max_power = 0.6;
+
+        double seconds = pidTimer.seconds();
+        pidTimer.reset();
+        double derivative = (error - lastError) / seconds;
+        lastError = error;
+
+        double power = (kp *error) + (kd * derivative);
+        double max_power = 0.8;
         power = Math.max(-max_power, Math.min(max_power, power));
 
-        if (Math.abs(error) < 1.0) {
+        if (Math.abs(error) < 0.8) {
             power = 0;
         }
         if (current_angle_degrees >= max_stanga && power > 0) {
