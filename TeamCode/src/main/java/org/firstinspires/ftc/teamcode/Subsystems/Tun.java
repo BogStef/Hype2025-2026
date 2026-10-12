@@ -16,7 +16,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 /// ///limita dreaplta 910/gear ratio adica aproximativ 140 grade la stanga 880/gear ratio adica aprox 135
 public class Tun {
     private DcMotorEx rotatie_tun;
-
+    private float hight=0;
 
     public Servo tun_servo;
     public Servo transfer1,transfer2;//dreapta, stanga
@@ -137,7 +137,7 @@ public class Tun {
     }
 
     private double length = 144.0;
-    public void allignTun(double robot_heading, double robot_x, double robot_y, Telemetry telemetry){ //TODO tune to be faster/smother
+    public void allign_tun_horizontal(double robot_heading, double robot_x, double robot_y, Telemetry telemetry){ //TODO tune to be faster/smother
         double delta_x = length - robot_x;
         double delta_y = length - robot_y;
         double field_angle_radians = Math.atan2(delta_y, delta_x);
@@ -172,5 +172,11 @@ public class Tun {
             telemetry.addData("Turret Power", "%.2f", power);
         }
         rotatie_tun.setPower(power);
+    }
+    public void align_tun_vertical(double robot_x, double robot_y){
+    }
+    public void shoot(float target_distance){
+        float speed=0; ///calculate based on target_distance and hight
+
     }
 }

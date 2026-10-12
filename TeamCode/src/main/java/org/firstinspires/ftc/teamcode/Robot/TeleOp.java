@@ -75,7 +75,7 @@ public class TeleOp extends LinearOpMode {
         if(gamepad1.circle){
             tun.tun_servo.setPosition(-0.5);
         }
-        tun.allignTun(pose.heading(), pose.x(), pose.y(), telemetry);
+        tun.allign_tun_horizontal(pose.heading(), pose.x(), pose.y(), telemetry);
         telemetry.addData("x",pose.x());
         telemetry.addData("y",pose.y());
         telemetry.addData("heading", Math.toDegrees(pose.heading()));
