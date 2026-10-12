@@ -136,47 +136,142 @@ public class Tun {
         return rotatie_tun.getCurrentPosition();
     }
 
-    private double length = 144.0;
-    public void allign_tun_horizontal(double robot_heading, double robot_x, double robot_y, Telemetry telemetry){ //TODO tune to be faster/smother
-        double delta_x = length - robot_x;
-        double delta_y = length - robot_y;
+    public double target_x = 144.0;
+    public double target_y = 144.0;
+    public double ticks_per_degree = 1.0; // Adjust if motor encoder ticks differ from 1 tick per degree after gear ratio
+
+    /**
+     * Auto-aligns the turret horizontally toward specified target field coordinates.
+     *
+     * @param robot_heading Current robot heading in radians
+     * @param robot_x       Current robot X position on field
+     * @param robot_y       Current robot Y position on field
+     * @param target_x      Target X coordinate on field
+     * @param target_y      Target Y coordinate on field
+     * @param telemetry     Telemetry handle for driver debugging
+     */
+    public void allign_tun_horizontal(double robot_heading, double robot_x, double robot_y, double target_x, double target_y, Telemetry telemetry) {
+        double delta_x = target_x - robot_x;
+        double delta_y = target_y - robot_y;
         double field_angle_radians = Math.atan2(delta_y, delta_x);
         double target_relative_radians = field_angle_radians - robot_heading;
         double target_angle_degrees = Math.toDegrees(target_relative_radians);
-        double current_angle_degrees = rotatie_tun.getCurrentPosition()/gear_ratio;
+
+        // Convert motor encoder ticks to turret degrees
+        double current_angle_degrees = (rotatie_tun.getCurrentPosition() / gear_ratio) / ticks_per_degree;
+
+        // Normalize error to [-180, 180] degrees
         double error = target_angle_degrees - current_angle_degrees;
         while (error > 180)  error -= 360;
         while (error <= -180) error += 360;
 
+        // Derivative term with safety guard against division by zero
         double seconds = pidTimer.seconds();
-        pidTimer.reset();
-        double derivative = (error - lastError) / seconds;
-        lastError = error;
+        double derivative = 0;
+        if (seconds > 0.0001) {
+            derivative = (error - lastError) / seconds;
+            pidTimer.reset();
+            lastError = error;
+        }
 
-        double power = (kp *error) + (kd * derivative);
+        double power = (kp * error) + (kd * derivative);
         double max_power = 0.8;
         power = Math.max(-max_power, Math.min(max_power, power));
 
+        // Deadband threshold to eliminate motor chatter near target
         if (Math.abs(error) < 0.8) {
             power = 0;
         }
+
+        // Soft limit enforcement
         if (current_angle_degrees >= max_stanga && power > 0) {
             power = 0;
-        } else if (current_angle_degrees <= (max_dreapta * -1) && power < 0) {
+        } else if (current_angle_degrees <= (-max_dreapta) && power < 0) {
             power = 0;
         }
+
         if (telemetry != null) {
-            telemetry.addData("Turret Target", "%.1f", target_angle_degrees);
-            telemetry.addData("Turret Current", "%.1f", current_angle_degrees);
-            telemetry.addData("Turret Error", "%.1f", error);
+            telemetry.addData("Turret Target", "%.1f°", target_angle_degrees);
+            telemetry.addData("Turret Current", "%.1f°", current_angle_degrees);
+            telemetry.addData("Turret Error", "%.1f°", error);
             telemetry.addData("Turret Power", "%.2f", power);
         }
+
         rotatie_tun.setPower(power);
+    }
+
+    /**
+     * Overloaded horizontal alignment defaulting to target_x and target_y.
+     */
+    public void allign_tun_horizontal(double robot_heading, double robot_x, double robot_y, Telemetry telemetry) {
+        allign_tun_horizontal(robot_heading, robot_x, robot_y, this.target_x, this.target_y, telemetry);
     }
     public void align_tun_vertical(double robot_x, double robot_y){
     }
-    public void shoot(float target_distance){
-        float speed=0; ///calculate based on target_distance and hight
 
+    /**
+     * Calculates required launcher motor velocity (in encoder ticks per second)
+     * based on horizontal distance and target height using projectile kinematics.
+     *
+     * @param distance Horizontal distance to target (in inches)
+     * @param height   Target height relative to launcher pivot (in inches)
+     * @param launchAngleDegrees Fixed launch angle of launcher in degrees (e.g., 35.0°)
+     * @return Required motor velocity in ticks per second
+     */
+    public double calculateLansareVelocity(double distance, double height, double launchAngleDegrees) {
+        if (distance <= 0) return 0;
+
+        double launchAngleRad = Math.toRadians(launchAngleDegrees);
+        double g = 386.09; // Gravity acceleration in inches/s^2
+
+        double tanTheta = Math.tan(launchAngleRad);
+        double cosTheta = Math.cos(launchAngleRad);
+
+        // Denominator in projectile equation: 2 * (d * tan(theta) - h)
+        double denominator = 2 * (distance * tanTheta - height);
+
+        // Prevent division by zero or imaginary square roots
+        if (denominator <= 0.01) {
+            denominator = 0.01;
+        }
+
+        // Required exit velocity in inches per second
+        double requiredV0 = (distance / cosTheta) * Math.sqrt(g / denominator);
+
+        // Empirical scaling constant converting linear launch velocity (in/s) to motor ticks/s
+        double ticksPerInSec = 12.5;
+        double targetVelocity = requiredV0 * ticksPerInSec;
+
+        // Clamp velocity within safe motor operational limits
+        double minVelocity = 500.0;
+        double maxVelocity = 2800.0;
+        return Math.max(minVelocity, Math.min(maxVelocity, targetVelocity));
+    }
+
+    /**
+     * Overloaded method using default 35.0° launch angle.
+     *
+     * @param distance Horizontal distance to target (in inches)
+     * @param height   Target height relative to launcher (in inches)
+     * @return Required motor velocity in ticks per second
+     */
+    public double calculateLansareVelocity(double distance, double height) {
+        return calculateLansareVelocity(distance, height, 35.0);
+    }
+
+    /**
+     * Calculates speed/velocity based on distance and height, updates lansare_velocity and runs motor.
+     *
+     * @param distance Horizontal distance to target
+     * @param height   Target height relative to launcher
+     */
+    public void shoot(double distance, double height) {
+        double velocity = calculateLansareVelocity(distance, height);
+        this.lansare_velocity = (int) Math.round(velocity);
+        lansare_tun.setVelocity(this.lansare_velocity);
+    }
+
+    public void shoot(float target_distance) {
+        shoot(target_distance, this.hight);
     }
 }
