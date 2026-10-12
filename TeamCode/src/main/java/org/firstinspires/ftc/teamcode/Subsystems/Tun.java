@@ -9,7 +9,11 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-///limita dreaplta 910/gear ratio adica aproximativ 140 grade la stanga 880/gear ratio adica aprox 135
+
+///
+///
+///
+/// ///limita dreaplta 910/gear ratio adica aproximativ 140 grade la stanga 880/gear ratio adica aprox 135
 public class Tun {
     private DcMotorEx rotatie_tun;
 
@@ -81,18 +85,15 @@ public class Tun {
         lansare_tun.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(pl, il, dl, fl));
     }
 
-    private int target = 100;
 
     public void run(Gamepad gamepad, Gamepad gamepad2) {
 
         if(gamepad.dpad_right){
-            //servo_tun_pos+=0.005;
-            rotatie_tun.setPower(-0.4);
+            servo_tun_pos+=0.005;
         }
 
         if(gamepad.dpad_left){
-            //servo_tun_pos-=0.005;
-            rotatie_tun.setPower(0.4);
+            servo_tun_pos-=0.005;
         }
         if(gamepad.dpad_up){
             lansare_velocity+=100;
@@ -104,8 +105,8 @@ public class Tun {
 
         }
         if (gamepad2.right_trigger>0)
-            rotatie_tun.setPower(0);
-        servo_tun_pos=Math.max(0.0, Math.min(servo_tun_pos, 1.0));
+            //rotatie_tun.setPower(0);
+            servo_tun_pos=Math.max(0.0, Math.min(servo_tun_pos, 1.0));
         tun_servo.setPosition(servo_tun_pos);
 
         if(gamepad.right_trigger>0.3){
@@ -118,7 +119,6 @@ public class Tun {
             transfer1.setPosition(block_pos_transfer1);
             transfer2.setPosition(block_pos_transfer2);
         }
-        rotatie_tun.setPower(gamepad2.right_stick_x * 0.1);
 
 
     }
