@@ -11,14 +11,14 @@ public class Intake {
     private DcMotor intake;
     private DcMotor transfer;
     private double power;
-    private boolean useMotor; // renamed for clarity
-    private boolean lastLeftTriggerState = false;
+    private boolean use_motor; 
+    private boolean last_left_trigger_state = false;
     public boolean toggle;
 
-    public void initi(HardwareMap hardwareMap){
+    public void init(HardwareMap hardwareMap){
         //this.useMotor = useMotor;
-        intake = hardwareMap.get(DcMotor.class,"intake");
-        transfer = hardwareMap.get(DcMotor.class,"transfer");
+        intake = hardware_map.get(DcMotor.class,"intake");
+        transfer = hardware_map.get(DcMotor.class,"transfer");
         intake.setDirection(DcMotorSimple.Direction.REVERSE);
         transfer.setDirection(DcMotorSimple.Direction.REVERSE);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
